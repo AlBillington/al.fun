@@ -1,0 +1,31 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Blood Bath Chess</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #202020;
+            overflow: hidden;
+        }
+        canvas {
+            border: 2px solid #000;
+            width: 100vmin;
+            height: 100vmin;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="chessCanvas" width="800" height="800"></canvas>
+
+    <!-- Mark scripts as modules -->
+    <script src="chess/moves.js" type="module"></script>
+    <script src="chess/chess.js" type="module"></script>
+</body>
+</html>
