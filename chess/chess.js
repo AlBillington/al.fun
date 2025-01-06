@@ -127,7 +127,7 @@ function isValidMove(row, col) {
     return row >= 0 && row < ROWS && col >= 0 && col < COLS;
 }
 
-function evaluateMove(move) {
+function evaluateMove(board, move) {
     if (!isValidMove(move.row, move.col)) {
         return -Infinity;
     }
@@ -139,30 +139,86 @@ function computerMove() {
     let bestMove = null;
     let bestScore = -Infinity;
 
+    // Piece scores for evaluation
+
+    // Evaluate opponent's best response for a given board state
+    function opponentBestResponse(board) {
+        let maxScore = 0;
+        for (let orow = 0; orow < ROWS; orow++) {
+            for (let ocol = 0; ocol < COLS; ocol++) {
+                const opiece = board[orow][ocol];
+                if (opiece === opiece.toUpperCase()) { // White pieces
+                    const oppMoves = getValidMoves(board, opiece, orow, ocol, 'all');
+                    for (const oppMove of oppMoves) {
+                        const target = board[oppMove.row][oppMove.col];
+                        if (target !== ' ' && target.toLowerCase() !== opiece.toLowerCase()) {
+                            maxScore = Math.max(maxScore, pieceScores[target.toUpperCase()] || 0);
+                        }
+                    }
+                }
+            }
+        }
+        return maxScore;
+    }
+
+    // Iterate through all black pieces
     for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLS; col++) {
             const piece = board[row][col];
             if (piece === piece.toLowerCase()) { // Black pieces
                 const moves = getValidMoves(board, piece, row, col, 'all');
-                moves.forEach(move => {
-                    const score = evaluateMove(move);
-                    if (score > bestScore) {
-                        bestScore = score;
+                for (const move of moves) {
+                    const score = evaluateMove(board, move);
+                    if (score < -40 ) {
+                        continue;
+                    }
+
+                    // Simulate the move
+                    const originalPiece = board[move.row][move.col];
+                    board[move.row][move.col] = piece;
+                    board[row][col] = ' ';
+
+                    // Evaluate opponent's response only if the current move improves score
+                    const opponentScore = score > bestScore ? opponentBestResponse(board) : 0;
+
+                    // Restore the board state
+                    board[row][col] = piece;
+                    board[move.row][move.col] = originalPiece;
+
+                    // Calculate net score
+                    const netScore = score - opponentScore;
+
+                    // Update best move
+                    if (netScore > bestScore) {
+                        bestScore = netScore;
                         bestMove = { from: { row, col }, to: { row: move.row, col: move.col } };
                     }
-                });
+                }
             }
         }
     }
-    
-
-    if (bestMove) {
-        movePiece(bestMove.from, bestMove.to);
-        highlightSquare(bestMove.from.row, bestMove.from.col, 'green');
-        changeTurn() 
+    // Execute the best move or default to the first available move
+    if (!bestMove) {
+        for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < COLS; col++) {
+                const piece = board[row][col];
+                if (piece === piece.toLowerCase()) {
+                    const moves = getValidMoves(board, piece, row, col, 'all');
+                    if (moves.length > 0) {
+                        bestMove = { from: { row, col }, to: { row: moves[0].row, col: moves[0].col } };
+                        break;
+                    }
+                }
+            }
+        }
     }
-    return bestMove ? bestMove.to : null;
+
+    movePiece(bestMove.from, bestMove.to);
+    highlightSquare(bestMove.from.row, bestMove.from.col, 'green');
+    changeTurn();
+    return bestMove.to;
 }
+
 
 function isValidTurn(piece) {
     if (turn === 'white') {
