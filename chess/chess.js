@@ -33,7 +33,7 @@ const pieceScores = { 'K': 3, 'Q': 9, 'R': 5, 'B': 3, 'N': 3, 'P': 1 };
 
 function loadImages(callback) {
     const SPRITE_SHEET = new Image();
-    SPRITE_SHEET.src = 'chess/assets/ChessPiecesArray.png';
+    SPRITE_SHEET.src = './assets/ChessPiecesArray.png';
 
     const SPRITE_WIDTH = 100;
     const SPRITE_HEIGHT = 100;
