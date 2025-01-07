@@ -103,6 +103,19 @@ canvas.addEventListener('mousedown', (e) => {
   }
 });
 
+
+// Touch events
+canvas.addEventListener('touchstart', (e) => {
+    const touch = e.touches[0];
+    startDrag(touch.clientX, touch.clientY);
+  });
+  canvas.addEventListener('touchmove', (e) => {
+    const touch = e.touches[0];
+    dragMove(touch.clientX, touch.clientY);
+  });
+  canvas.addEventListener('touchend', endDrag);
+  
+
 canvas.addEventListener('mousemove', (e) => {
   if (selectedMagnet) {
     selectedMagnet.x = e.clientX - offsetX;
