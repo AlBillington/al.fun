@@ -86,23 +86,35 @@ function addMagnet() {
   magnets.push(new Magnet(x, y));
 }
 
-// Mouse events
-canvas.addEventListener('mousedown', (e) => {
-  const mouseX = e.clientX;
-  const mouseY = e.clientY;
-
-  for (let magnet of magnets) {
-    const dx = mouseX - magnet.x;
-    const dy = mouseY - magnet.y;
-    if (Math.sqrt(dx * dx + dy * dy) < magnet.radius) {
-      selectedMagnet = magnet;
-      offsetX = dx;
-      offsetY = dy;
-      break;
+// Mouse and touch events
+function startDrag(x, y) {
+    for (let magnet of magnets) {
+      const dx = x - magnet.x;
+      const dy = y - magnet.y;
+      if (Math.sqrt(dx * dx + dy * dy) < magnet.radius) {
+        selectedMagnet = magnet;
+        offsetX = dx;
+        offsetY = dy;
+        break;
+      }
     }
   }
-});
-
+  
+  function dragMove(x, y) {
+    if (selectedMagnet) {
+      selectedMagnet.x = x - offsetX;
+      selectedMagnet.y = y - offsetY;
+    }
+  }
+  
+  function endDrag() {
+    selectedMagnet = null;
+  }
+  
+// Mouse events
+canvas.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY));
+canvas.addEventListener('mousemove', (e) => dragMove(e.clientX, e.clientY));
+canvas.addEventListener('mouseup', endDrag);
 
 // Touch events
 canvas.addEventListener('touchstart', (e) => {
