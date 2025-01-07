@@ -86,6 +86,7 @@ function addMagnet() {
   magnets.push(new Magnet(x, y));
 }
 
+
 // Mouse and touch events
 function startDrag(x, y) {
     for (let magnet of magnets) {
@@ -95,6 +96,11 @@ function startDrag(x, y) {
         selectedMagnet = magnet;
         offsetX = dx;
         offsetY = dy;
+        lastX = x;
+        lastY = y;
+        lastTime = performance.now();
+        velocityX = 0;
+        velocityY = 0;
         break;
       }
     }
@@ -104,20 +110,34 @@ function startDrag(x, y) {
     if (selectedMagnet) {
       selectedMagnet.x = x - offsetX;
       selectedMagnet.y = y - offsetY;
+  
+      const currentTime = performance.now();
+      const dt = (currentTime - lastTime) / 1000;
+  
+      velocityX = (x - lastX) / dt;
+      velocityY = (y - lastY) / dt;
+  
+      lastX = x;
+      lastY = y;
+      lastTime = currentTime;
     }
   }
   
   function endDrag() {
+    if (selectedMagnet) {
+      selectedMagnet.vx = velocityX/130;
+      selectedMagnet.vy = velocityY/130;
+    }
     selectedMagnet = null;
   }
   
-// Mouse events
-canvas.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY));
-canvas.addEventListener('mousemove', (e) => dragMove(e.clientX, e.clientY));
-canvas.addEventListener('mouseup', endDrag);
-
-// Touch events
-canvas.addEventListener('touchstart', (e) => {
+  // Mouse events
+  canvas.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY));
+  canvas.addEventListener('mousemove', (e) => dragMove(e.clientX, e.clientY));
+  canvas.addEventListener('mouseup', endDrag);
+  
+  // Touch events
+  canvas.addEventListener('touchstart', (e) => {
     const touch = e.touches[0];
     startDrag(touch.clientX, touch.clientY);
   });
@@ -126,18 +146,10 @@ canvas.addEventListener('touchstart', (e) => {
     dragMove(touch.clientX, touch.clientY);
   });
   canvas.addEventListener('touchend', endDrag);
-  
 
-canvas.addEventListener('mousemove', (e) => {
-  if (selectedMagnet) {
-    selectedMagnet.x = e.clientX - offsetX;
-    selectedMagnet.y = e.clientY - offsetY;
-  }
-});
 
-canvas.addEventListener('mouseup', () => {
-  selectedMagnet = null;
-});
+
+
 
 // Physics calculations
 function applyPhysics() {
