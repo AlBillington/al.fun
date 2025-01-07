@@ -6,7 +6,7 @@ const ctx = canvas.getContext('2d');
 const SQUARE_SIZE = 100;
 const ROWS = 8;
 const COLS = 8;
-const WHITE = '#FFFFFF';
+const WHITE = '#FFAFAF';
 const GRAY = '#802828';
 const HIGHLIGHT = 'yellow';
 
