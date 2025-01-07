@@ -192,6 +192,16 @@ function applyPhysics() {
         m2.touching = true; // Mark as touching
       }
 
+      // wall detection
+        if (m1.x - m1.radius < 0 || m1.x + m1.radius > canvas.width) {
+            m1.vx *= -1;
+            m1.touching = true; // Mark as touching
+        }
+        if (m1.y - m1.radius < 0 || m1.y + m1.radius > canvas.height) {
+            m1.vy *= -1;
+            m1.touching = true; // Mark as touching
+        }
+
       m1.poles.forEach((p1) => {
         const x1 = m1.x + Math.cos(m1.angle + p1.angle) * m1.radius;
         const y1 = m1.y + Math.sin(m1.angle + p1.angle) * m1.radius;
@@ -210,6 +220,8 @@ function applyPhysics() {
 
           totalFx += fx;
           totalFy += fy;
+        
+
 
           totalTorque += (Math.cos(p1.angle) * fy - Math.sin(p1.angle) * fx) * m1.radius;
         });
