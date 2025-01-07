@@ -11,11 +11,19 @@ let selectedMagnet = null;
 let offsetX = 0;
 let offsetY = 0;
 
-const friction = 0.95;
+let friction = parseFloat(document.getElementById('frictionSlider').value);
 const angularDamping = 0.9; // Added angular damping
-const highFriction = 0.2; // High damping friction when touching
-const magnetStrength = 10; // All magnets have the same strength
+const highFriction = 0.7; // High damping friction when touching
+let magnetStrength = parseFloat(document.getElementById('strengthSlider').value);
 const maxTorque = 0.05; // Limit torque to prevent wild spinning
+
+frictionSlider.addEventListener('input', () => {
+    friction = parseFloat(frictionSlider.value);
+  });
+
+  strengthSlider.addEventListener('input', () => {
+    magnetStrength = parseFloat(strengthSlider.value);
+  });
 
 // Magnet Object
 class Magnet {
@@ -24,7 +32,6 @@ class Magnet {
     this.y = y;
     this.vx = 0;
     this.vy = 0;
-    this.strength = magnetStrength;
     this.radius = 20;
     this.angle = Math.random() * Math.PI * 2; // Random pole orientation
     this.angularVelocity = 0;
@@ -40,7 +47,14 @@ class Magnet {
   draw() {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fillStyle = this.strength > 0 ? 'silver' : 'blue';
+
+    const strengthColor = magnetStrength > 0 
+    ? `rgb(${200 - magnetStrength * 10}, ${200 - magnetStrength * 10}, ${200 - magnetStrength * 10})` // Silver to blue
+    : `rgb(150, ${100 + magnetStrength * 25}, ${100 + magnetStrength * 25})`; // Blue to red
+
+    ctx.fillStyle = strengthColor;
+
+
     ctx.fill();
     ctx.stroke();
 
@@ -65,7 +79,7 @@ class Magnet {
   }
 
   update() {
-    const damping = this.touching ? highFriction : friction; // Apply high friction if touching
+    const damping = this.touching ? highFriction : (1-friction); // Apply high friction if touching
     this.vx *= damping;
     this.vy *= damping;
     this.x += this.vx;
@@ -219,7 +233,6 @@ function update() {
 }
 
 // Button to add magnets
-document.body.insertAdjacentHTML('beforeend', '<button id="addMagnet">Add Magnet</button>');
 document.getElementById('addMagnet').addEventListener('click', addMagnet);
 
 update();

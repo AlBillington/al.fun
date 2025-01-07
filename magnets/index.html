@@ -20,9 +20,33 @@
       border-radius: 0;  
       border: 1px solid #000;  
     }
+    .slider-container {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border: 1px solid #000;
+      border-radius: 5px;
+    }
+    .slider-container label {
+      display: block;
+      margin-bottom: 5px;
+    }
   </style>
 </head>
 <body>
+  <button id="addMagnet">Add Magnet</button>
+  <div class="slider-container">
+    <label for="frictionSlider">Friction:</label>
+    <input type="range" id="frictionSlider" min="0" max=".5" step="0.01" value="0.05">
+    <label for="strengthSlider">Strength:</label>
+    <input type="range" id="strengthSlider" min="-2" max="10" step="0.1" value="1">
+  </div>
+  <script>
+    const frictionSlider = document.getElementById('frictionSlider');
+    const strengthSlider = document.getElementById('strengthSlider');
+  </script>
   <script src="magnets.js"></script>
 </body>
 </html>
