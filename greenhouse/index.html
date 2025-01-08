@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Greenhouse Clicker Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Persistent Money Display */
+        #money-display {
+            position: fixed; /* Fixed at the top */
+            top: 10px; /* 10px from the top */
+            left: 50%; /* Center horizontally */
+            transform: translateX(-50%); /* Adjust to truly center */
+            font-size: 20px;
+            padding: 5px 10px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            z-index: 100; /* Ensure it stays above other elements */
+        }
+
+
+        #game-container {
+            display: grid;
+            grid-template-columns: repeat(4, 80px);
+            grid-gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        #toolbar-container {
+            display: flex;
+            margin-top: 10px;
+        }
+
+        .toolbar-item {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ccc;
+            font-size: 20px;
+            margin: 0 5px;
+        }
+
+        /* Store Panel */
+        #store-panel {
+            display: none; /* Starts hidden */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: lightgray;
+            z-index: 10;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #store-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 120px);
+            grid-gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .store-item {
+            width: 120px;
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid black;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .disabled {
+            pointer-events: none;
+            opacity: 0.5;
+            background-color: lightgray;
+        }
+
+        #store-button {
+            padding: 10px 20px;
+            margin: 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #close-store-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #alert-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgb(255, 179, 179); /* Error color */
+            color: rgb(0, 0, 0);
+            text-align: center;
+            padding: 10px;
+            font-size: 16px;
+            z-index: 100; /* Ensure it appears above other content */
+            display: none; /* Hidden by default */
+        }
+
+
+    </style>
+</head>
+<body>
+    <!-- Persistent Money Display -->
+    <div id="money-display">$5</div>
+
+    <!-- Game Container -->
+    <div id="game-container"></div>
+    <div id="toolbar-container"></div>
+    <button id="store-button" onclick="toggleStore()">Store</button>
+
+    <!-- Store Panel -->
+    <div id="store-panel">
+        <h2>General Store</h2>
+        <p>Unlock a tool</p>
+        <div id="store-grid"></div>
+        <button id="close-store-button" onclick="toggleStore()">Close</button>
+    </div>
+    <div id="alert-banner" style="display: none;"></div>
+
+    <!-- Single JavaScript File -->
+    <script src="greenhouse.js"></script>
+</body>
+</html>

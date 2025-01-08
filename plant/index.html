@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Simulator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f8ff;
+        }
+
+        canvas {
+            border: 1px solid #000;
+            margin-top: 10px;
+        }
+
+        .resource-display {
+            display: flex;
+            justify-content: space-around;
+            width: 80%;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .resource-display div {
+            padding: 10px;
+            border: 1px solid #000;
+            border-radius: 5px;
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Plant Simulator</h1>
+    <div class="resource-display">
+        <div id="water-display">Water: <span id="water-rate">0</span>/sec</div>
+        <div id="energy-display">Energy: <span id="energy-rate">0</span>/sec</div>
+    </div>
+    <canvas id="plantCanvas" width="800" height="600"></canvas>
+    <script src="plant_ml.js"></script>
+
+</body>
+</html>
