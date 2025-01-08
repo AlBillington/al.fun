@@ -348,7 +348,7 @@ function initializeToolbar() {
 // Display icon and price if applicable
 toolElement.innerHTML = tool.price > 0 
     ? `<div style="font-size: 24px;">${tool.icon}</div>
-       <div style="font-size: 12px; margin-top: 2px;">$${tool.price}</div>`
+       <div style="font-size: 12px; margin-top: 2px;">$${tool.price.toFixed(2)}</div>`
     : `<div style="font-size: 24px;">${tool.icon}</div>`;
 
 
