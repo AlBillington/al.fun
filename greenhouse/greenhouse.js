@@ -22,12 +22,13 @@ class Fruit {
 }
 
 class Tool {
-    constructor(name, icon, price, type, unlockPrice) {
+    constructor(name, icon, price, type, unlockPrice, backgroundColor = 'white') {
         this.name = name;
         this.icon = icon;
         this.price = price;
         this.type = type; // 'seed' or 'soil'
         this.unlockPrice = unlockPrice;
+        this.backgroundColor = backgroundColor;
     }
 }
 
@@ -41,21 +42,29 @@ class SoilType {
 
 const fruits = {
     tomato: new Fruit('Tomato', 10, 1, 'red'),
-    cucumber: new Fruit('Cucumber', 18, 2, 'darkgreen')
+    cucumber: new Fruit('Cucumber', 18, 2, 'darkgreen'),
+    onion: new Fruit('Onion', 30, 5, 'yellow'),
+    pumpkin: new Fruit('Pumpkin', 40, 10, 'orange'),
 };
 
 const tools = {
     cursor: new Tool('Cursor', '🤌', 0, 'cursor', 0),
     tomatoSeed: new Tool('Tomato Seed', '🍅', .25, 'seed', 0),
     cucumberSeed: new Tool('Cucumber Seed', '🥒', .40, 'seed', 30),
-    normalSoil: new Tool('Normal Soil', '🟫', 1, 'soil', 20),
-    fertileSoil: new Tool('Fertile Soil', '🟤', 3, 'soil', 100)
+    onionSeed: new Tool('Onion Seed', '🧅', 1, 'seed', 70),
+    pumpkinSeed: new Tool('Pumpkin Seed', '🎃', 3, 'seed', 200),
+    normalSoil: new Tool('Normal Pot', '🟫', 1, 'soil', 20, 'sandybrown'),
+    advancedSoil: new Tool('Advanced Pot', 'F', 3, 'soil', 100, 'saddlebrown'),
+    superSoil: new Tool('Super Pot', 'S', 5, 'soil', 200, 'brown'),
+    megaSoil: new Tool('Mega Pot', 'M', 10, 'soil', 500, 'black'),
 };
 
 const soilTypes = {
     empty: new SoilType('Empty', 'white', 0),
     normal: new SoilType('Normal', 'sandybrown', 1),
-    fertile: new SoilType('Fertile', 'saddlebrown', 2)
+    advanced: new SoilType('Advanced', 'saddlebrown', 2),
+    super: new SoilType('Super', 'brown', 3),
+    mega: new SoilType('Mega', 'black', 5)
 };
 
 function showAlert(message) {
@@ -67,6 +76,22 @@ function showAlert(message) {
     setTimeout(() => {
         banner.style.display = 'none';
     }, 3000);
+}
+
+function showFloatingText(text, x, y) {
+    const floatingText = document.createElement('div');
+    floatingText.textContent = text;
+    floatingText.classList.add('floating-text');
+    document.body.appendChild(floatingText);
+
+    // Position the text near the click location
+    floatingText.style.left = `${x}px`;
+    floatingText.style.top = `${y}px`;
+
+    // Remove the text after animation
+    setTimeout(() => {
+        floatingText.remove();
+    }, 1000); // Matches the animation duration
 }
 
 
@@ -107,6 +132,8 @@ class Plot {
         this.state = 'dirt';
         this.timer = 0;
         this.fruit = null;
+        this.leaves = null;
+        this.fruitPositions = null;
         this.updateAppearance();
     }
  
@@ -180,19 +207,46 @@ class Plot {
                 ctx.restore();
             }
         });
-    
+                    
         // Draw fruit based on state
-        if (this.state === 'fruit') {
-            ctx.fillStyle = this.fruit.color;
-            ctx.beginPath();
-            ctx.arc(centerX, baseY - stemHeight, 6 * soilTypes[this.potType].multiplier, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (this.state === 'overripe') {
-            ctx.fillStyle = 'brown';
-            ctx.beginPath();
-            ctx.arc(centerX, baseY - stemHeight, 6, 0, Math.PI * 2);
-            ctx.fill();
+        if (this.state === 'fruit' || this.state === 'overripe') {
+            const radius = 6; // Fixed size for each fruit
+            const color = this.state === 'fruit' ? this.fruit.color : 'brown'; // Color depends on state
+
+            // Draw each fruit at its pre-generated position
+
+            if (!this.fruitPositions) {
+                // Generate positions once
+                this.fruitPositions = [];
+                const fruitCount = soilTypes[this.potType].multiplier; // Number of fruits based on pot type
+                const jitter = 5; // Maximum random offset for bunching
+                for (let i = 0; i < fruitCount; i++) {
+                    this.fruitPositions.push({
+                        offsetX: (Math.random() - 0.5) * jitter * 2,
+                        offsetY: (Math.random() - 0.5) * jitter * 2
+                    });
+                }
+            }
+
+            this.fruitPositions.forEach(position => {
+                const x = centerX + position.offsetX; // Apply pre-generated X offset
+                const y = baseY - stemHeight + position.offsetY; // Apply pre-generated Y offset
+
+                // Draw fruit border (near black)
+                ctx.fillStyle = '#111'; // Near black border
+                ctx.beginPath();
+                ctx.arc(x, y, radius + 1, 0, Math.PI * 2); // Slightly larger radius for the border
+                ctx.fill();
+
+                // Draw fruit body
+                ctx.fillStyle = color; // Main fruit color
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
         }
+
+
     }
     
     
@@ -215,13 +269,17 @@ function initializeGrid() {
             plot.canvas.addEventListener('click', () => {
                 if (plot.state === 'fruit' || plot.state === 'overripe') {
                     if (plot.state === 'fruit') {
-                        money += plot.fruit.price * soilTypes[plot.potType].multiplier;
+                        earnings = plot.fruit.price * soilTypes[plot.potType].multiplier;
+                        money += earnings;
+                        // Show the floating text near the clicked fruit
+                            const rect = plot.canvas.getBoundingClientRect();
+                            showFloatingText(`+$${earnings.toFixed(0)}`, rect.left + rect.width / 2, rect.top);
                     }
                     plot.reset();
                 } 
                 if (selectedTool && money >= selectedTool.price) {
                     if (selectedTool.type === 'soil' && plot.potType === 'empty') {
-                        plot.potType = selectedTool.name === 'Normal Soil' ? 'normal' : 'fertile';
+                        plot.potType = selectedTool.name.toLowerCase().split(' ')[0];
                         plot.updateAppearance();
                         money -= selectedTool.price;
                     } else if (selectedTool.type === 'seed' && plot.state === 'dirt') {
@@ -263,34 +321,49 @@ function initializeToolbar() {
         });
     }
 
-    purchasedTools.forEach((toolKey, index) => {
-        const tool = tools[toolKey];
+    // Sort tools: Cursor first, then by type and price
+    const sortedTools = purchasedTools
+        .map(toolKey => tools[toolKey]) // Map tool keys to tool objects
+        .sort((a, b) => {
+            // Cursor type always first
+            if (a.type === 'cursor' && b.type !== 'cursor') return -1;
+            if (b.type === 'cursor' && a.type !== 'cursor') return 1;
+
+            // Sort by type alphabetically
+            if (a.type !== b.type) return a.type.localeCompare(b.type);
+
+            // Sort by price (ascending) within type
+            return a.price - b.price;
+        });
+
+    // Create toolbar elements
+    sortedTools.forEach((tool, index) => {
         const toolElement = document.createElement('div');
         toolElement.classList.add('toolbar-item');
 
-        // add a tooltip with the name
+        // Add tooltip with the name
         toolElement.title = tool.name;
 
-        if (tool.price > 0) {
-        toolElement.textContent = `${tool.icon}$${tool.price}`;
-        } else {
-            toolElement.textContent = `${tool.icon}`;
-        }
-        if (tool.type === 'seed') {
-            toolElement.style.backgroundColor = 'lightgreen';
-        } else if (tool.type === 'soil') {
-            toolElement.style.backgroundColor = 'saddlebrown';
-        } else {
-            toolElement.style.backgroundColor = 'white'; // Default to white
-        }                
+        // Display icon and price if applicable
+        toolElement.textContent = tool.price > 0 
+            ? `${tool.icon}$${tool.price}` 
+            : `${tool.icon}`;
+
+
+        toolElement.style.backgroundColor = tool.backgroundColor
+
+        // Click handler for selecting tool
         toolElement.addEventListener('click', () => {
             selectedTool = tool;
             highlightSelected(index);
         });
+
         toolbar.push(toolElement);
         toolbarContainer.appendChild(toolElement);
     });
 }
+
+
 
 // Store implementation
 let storeOpen = false;

@@ -119,6 +119,27 @@
             display: none; /* Hidden by default */
         }
 
+        .floating-text {
+            position: absolute;
+            font-size: 16px;
+            color: green;
+            font-weight: bold;
+            animation: floatUp 1s ease-out forwards;
+            pointer-events: none; /* Prevent blocking clicks */
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+        }
+
+
 
     </style>
 </head>
