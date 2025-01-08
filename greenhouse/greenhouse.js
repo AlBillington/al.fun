@@ -48,13 +48,13 @@ const fruits = {
 };
 
 const tools = {
-    cursor: new Tool('Cursor', '🤌', 0, 'cursor', 0),
+    cursor: new Tool('Cursor', '👆', 0, 'cursor', 0),
     tomatoSeed: new Tool('Tomato Seed', '🍅', .25, 'seed', 0),
     cucumberSeed: new Tool('Cucumber Seed', '🥒', .40, 'seed', 30),
     onionSeed: new Tool('Onion Seed', '🧅', 1, 'seed', 70),
     pumpkinSeed: new Tool('Pumpkin Seed', '🎃', 3, 'seed', 200),
     normalSoil: new Tool('Normal Pot', '🟫', 1, 'soil', 20, 'sandybrown'),
-    advancedSoil: new Tool('Advanced Pot', 'F', 3, 'soil', 100, 'saddlebrown'),
+    advancedSoil: new Tool('Advanced Pot', 'A', 3, 'soil', 100, 'saddlebrown'),
     superSoil: new Tool('Super Pot', 'S', 5, 'soil', 200, 'brown'),
     megaSoil: new Tool('Mega Pot', 'M', 10, 'soil', 500, 'black'),
 };
@@ -343,11 +343,15 @@ function initializeToolbar() {
 
         // Add tooltip with the name
         toolElement.title = tool.name;
-
+            
         // Display icon and price if applicable
-        toolElement.textContent = tool.price > 0 
-            ? `${tool.icon}$${tool.price}` 
-            : `${tool.icon}`;
+// Display icon and price if applicable
+toolElement.innerHTML = tool.price > 0 
+    ? `<div style="font-size: 24px;">${tool.icon}</div>
+       <div style="font-size: 12px; margin-top: 2px;">$${tool.price}</div>`
+    : `<div style="font-size: 24px;">${tool.icon}</div>`;
+
+
 
 
         toolElement.style.backgroundColor = tool.backgroundColor
