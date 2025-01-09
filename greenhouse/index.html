@@ -72,10 +72,29 @@
         }
 
         #store-grid {
+            display: flex;
+            flex-direction: column; /* Stack tier groups vertically */
+            gap: 20px; /* Space between tiers */
+        }
+
+        .tier-group {
+            display: flex;
+            flex-direction: column; /* Stack tier label and grid */
+            align-items: flex-start;
+            width: 100%; /* Full width of the store panel */
+        }
+
+        .tier-label {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px; /* Space below the tier label */
+        }
+
+        .tier-buttons {
             display: grid;
-            grid-template-columns: repeat(4, 120px);
-            grid-gap: 10px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(4, 1fr); /* 4 buttons wide */
+            gap: 10px; /* Space between buttons */
+            width: 100%; /* Full width */
         }
 
         .store-item {
@@ -94,6 +113,13 @@
             pointer-events: none;
             opacity: 0.5;
             background-color: lightgray;
+        }
+
+        #upgrade-tier-button {
+            padding: 10px 20px;
+            margin: 20px;
+            font-size: 16px;
+            cursor: pointer;
         }
 
         #store-button {
@@ -160,6 +186,7 @@
         <h2>General Store</h2>
         <p>Buy an item to unlock it and add it to your tools</p>
         <div id="store-grid"></div>
+        <button id="upgrade-tier-button" onclick="upgradeTier()">Upgrade Tier</button>
         <button id="close-store-button" onclick="toggleStore()">Close</button>
     </div>
     <div id="alert-banner" style="display: none;"></div>

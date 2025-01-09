@@ -1,16 +1,16 @@
 const gridSize = 4;
 const grid = [];
 const toolbar = [];
-let money = 5; // Start with $5
-let selectedTool = 1; // Track the selected tool
-let selectedSoil = null; // Track the selected soil type
+let money = 5;
+let selectedTool = 1; 
+let selectedSoil = null; 
+let currentTier = 1;
 
 let purchasedTools = ['cursor', 'normalSoil', 'tomatoSeed']; // Start with Tomato Seeds only
 
 
 const gameContainer = document.getElementById('game-container');
 const toolbarContainer = document.getElementById('toolbar-container');
-const moneyDisplay = document.getElementById('money-display');
 
 class Fruit {
     constructor(name, growTime, price, color) {
@@ -22,13 +22,15 @@ class Fruit {
 }
 
 class Tool {
-    constructor(name, icon, price, type, unlockPrice, backgroundColor = 'white') {
+    constructor(name, icon, price, type, tier, unlockPrice, backgroundColor = 'white', tooltip = '') {
         this.name = name;
         this.icon = icon;
         this.price = price;
         this.type = type; // 'seed' or 'soil'
         this.unlockPrice = unlockPrice;
         this.backgroundColor = backgroundColor;
+        this.tier = tier;
+        this.tooltip = tooltip;
     }
 }
 
@@ -48,15 +50,18 @@ const fruits = {
 };
 
 const tools = {
-    cursor: new Tool('Cursor', '👆', 0, 'cursor', 0),
-    tomatoSeed: new Tool('Tomato Seed', '🍅', .25, 'seed', 0),
-    cucumberSeed: new Tool('Cucumber Seed', '🥒', .40, 'seed', 30),
-    onionSeed: new Tool('Onion Seed', '🧅', 1, 'seed', 70),
-    pumpkinSeed: new Tool('Pumpkin Seed', '🎃', 3, 'seed', 200),
-    normalSoil: new Tool('Normal Pot', '🟫', 1, 'soil', 20, 'sandybrown'),
-    advancedSoil: new Tool('Advanced Pot', 'A', 3, 'soil', 100, 'saddlebrown'),
-    superSoil: new Tool('Super Pot', 'S', 5, 'soil', 200, 'brown'),
-    megaSoil: new Tool('Mega Pot', 'M', 10, 'soil', 500, 'black'),
+    cursor: new Tool('Cursor', '👆', 0, 'cursor', 1, 0),
+    tomatoSeed: new Tool('Tomato Seed', '🍅', 0.25, 'seed', 1, 0),
+    cucumberSeed: new Tool('Cucumber Seed', '🥒', 0.40, 'seed', 1, 30),
+    onionSeed: new Tool('Onion Seed', '🧅', 1, 'seed', 2, 70),
+    pumpkinSeed: new Tool('Pumpkin Seed', '🎃', 3, 'seed', 3, 200),
+    normalSoil: new Tool('Normal Pot', '🟫', 1, 'soil', 1, 20, 'sandybrown', tooltip='A pot lol'),
+    advancedSoil: new Tool('Advanced Pot', 'A', 3, 'soil', 1, 50, 'saddlebrown', tooltip='Better pot will yield 2x as much per plant'),
+    superSoil: new Tool('Super Pot', 'S', 5, 'soil', 3, 200, 'brown',  tooltip='Better pot will yield 2x as much per plant'),
+    megaSoil: new Tool('Mega Pot', 'M', 10, 'soil', 4, 500, 'darkgrey', tooltip='Better pot will yield 2x as much per plant'),
+    autoFertilize: new Tool('Auto Fertilizer', '💩', 0, 'automation', 3, 500, '', tooltip='Adds fertilizer to your crops, making them grow 50% faster'),
+    autoSeeder: new Tool('Auto Planter', '🌱', 0, 'automation', 2, 200, '', tooltip='after you harvest a crop, it will be automatically replanted'),
+    autoPlanter: new Tool('Auto Harvester', '🚜', 0, 'automation', 4, 2000, '', tooltip='Crops will be harvested automatically once they are ready'),
 };
 
 const soilTypes = {
@@ -111,9 +116,14 @@ class Plot {
 
     grow() {
         if (this.fruit) {
-            this.timer++;
+
+            let increment = 1;
+            if (purchasedTools.includes('autoFertilize')) {
+                increment = 1.5;
+            }
+            this.timer += increment;
             const growthStage = Math.floor((this.timer / this.fruit.growTime));
-            if (growthStage >= 9) {
+            if (growthStage >= 9 * increment) {
                 this.state = 'overripe';
             } else if (growthStage === 4) {
                 this.state = 'fruit';
@@ -124,14 +134,26 @@ class Plot {
             } else if (growthStage === 1) {
                 this.state = 'seed';
             }
+        
+            if (growthStage == 8 && purchasedTools.includes('autoPlanter')) {
+                let earnings = this.fruit.price * soilTypes[this.potType].multiplier;
+                money += earnings;
+                // Show the floating text near the clicked fruit
+                    const rect = this.canvas.getBoundingClientRect();
+                    showFloatingText(`+$${earnings.toFixed(0)}`, rect.left + rect.width / 2, rect.top);
+                this.reset()
+                updateMoney()
+            }
         }
         this.updateAppearance();
     }
 
     reset() {
-        this.state = 'dirt';
+        if (!purchasedTools.includes('autoSeeder')) {
+            this.fruit = null;
+        } 
         this.timer = 0;
-        this.fruit = null;
+        this.state = 'dirt'; 
         this.leaves = null;
         this.fruitPositions = null;
         this.updateAppearance();
@@ -142,7 +164,7 @@ class Plot {
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     
-        const growthFactor = Math.min(this.timer / (this.fruit?.growTime * 4), 1);
+        const growthFactor = Math.min(this.timer / (this.fruit?.growTime * 6), 1);
     
         // Dimensions based on canvas size
         const centerX = this.canvas.width / 2;
@@ -277,7 +299,7 @@ function initializeGrid() {
                     }
                     plot.reset();
                 } 
-                if (selectedTool && money >= selectedTool.price) {
+                else if (selectedTool && money >= selectedTool.price) {
                     if (selectedTool.type === 'soil' && plot.potType === 'empty') {
                         plot.potType = selectedTool.name.toLowerCase().split(' ')[0];
                         plot.updateAppearance();
@@ -301,7 +323,7 @@ function initializeGrid() {
                         }
                     }
                 }
-                moneyDisplay.textContent = `$${Math.round(money * 100) / 100}`; // Round to 2 decimal places
+                updateMoney();
             });
 
             grid[i][j] = plot;
@@ -334,7 +356,7 @@ function initializeToolbar() {
 
             // Sort by price (ascending) within type
             return a.price - b.price;
-        });
+        }).filter(tool => tool.type != 'automation'); 
 
     // Create toolbar elements
     sortedTools.forEach((tool, index) => {
@@ -345,14 +367,10 @@ function initializeToolbar() {
         toolElement.title = tool.name;
             
         // Display icon and price if applicable
-// Display icon and price if applicable
-toolElement.innerHTML = tool.price > 0 
+        toolElement.innerHTML = tool.price > 0 
     ? `<div style="font-size: 24px;">${tool.icon}</div>
        <div style="font-size: 12px; margin-top: 2px;">$${tool.price.toFixed(2)}</div>`
     : `<div style="font-size: 24px;">${tool.icon}</div>`;
-
-
-
 
         toolElement.style.backgroundColor = tool.backgroundColor
 
@@ -361,7 +379,7 @@ toolElement.innerHTML = tool.price > 0
             selectedTool = tool;
             highlightSelected(index);
         });
-
+        selectedTool = tool;
         toolbar.push(toolElement);
         toolbarContainer.appendChild(toolElement);
     });
@@ -389,43 +407,58 @@ function toggleStore() {
     }
 }
 
+function updateMoney() {
+    const moneyDisplay = document.getElementById('money-display');
+    moneyDisplay.textContent = `$${money.toFixed(2)}`;
+}
+
+let unlockPrice = 500; // Cost to upgrade tier
 
 function initializeStore() {
-    const storePanel = document.createElement('div');
-    storePanel.id = 'store-panel';
-    storePanel.style.display = 'none';
-    storePanel.style.position = 'absolute';
-    storePanel.style.width = '100%';
-    storePanel.style.height = '100%';
-    storePanel.style.backgroundColor = 'lightgray';
-    storePanel.style.zIndex = '10';
+    const storePanel = document.getElementById('store-panel');
 
-    Object.keys(tools).forEach(toolKey => {
-        const tool = tools[toolKey];
-        if (tool.unlockPrice === 0) return;
-        const button = document.createElement('button');
-        button.textContent = `${tool.icon} - $${tool.price}`;
-        button.title = tool.name;
-        
-        button.onclick = () => {
-            if (money >= tool.unlockPrice && !purchasedTools.includes(toolKey)) {
-                money -= tool.unlockPrice;
-                purchasedTools.push(toolKey);
-                moneyDisplay.textContent = `$${money.toFixed(2)}`;
-                initializeToolbar(); // Refresh toolbar
-            }
-        };
-        storePanel.appendChild(button);
-    });
-
-    const closeButton = document.createElement('button');
-    closeButton.textContent = 'Close';
-    closeButton.onclick = toggleStore;
-    storePanel.appendChild(closeButton);
+    updateTierButton()
 
     document.body.appendChild(storePanel);
 }
 
+const nextTierCost = [0, 150, 500, 1500, 3500, 8500];
+
+function updateTierButton() {
+    // Update the Upgrade Tier button
+    const upgradeButton = document.getElementById('upgrade-tier-button');
+
+    const canAfford = money >= unlockPrice;
+
+    if (!canAfford) {
+        upgradeButton.classList.add('disabled');
+    }
+    if (currentTier > 4) {
+        upgradeButton.classList.add('disabled');
+        upgradeButton.innerHTML = `
+            <div style="font-size: 14px;">Max Level Reached</div>
+        `;
+    } else { 
+        upgradeButton.innerHTML = `
+        <div style="font-size: 14px;">$${nextTierCost[currentTier]}</div>
+        <div style="font-size: 12px;">Upgrade Farm to Level ${currentTier + 1}</div>
+        `;
+    }
+}
+
+function upgradeTier() {
+
+    if (money >= unlockPrice) {
+        // Deduct money and upgrade the tier
+        money -= unlockPrice;
+        currentTier++;
+        unlockPrice = nextTierCost[currentTier];
+        updateTierButton()
+        updateMoney()
+        updateStore()
+    } 
+
+}
 
 // Store Logic
 function toggleStore() {
@@ -443,45 +476,82 @@ function toggleStore() {
     }
 }
 
+
 function updateStore() {
     const storeGrid = document.getElementById('store-grid');
-    storeGrid.innerHTML = '';
+    storeGrid.innerHTML = ''; // Clear the current store content
 
+    // Group tools by tier
+    const toolsByTier = {};
     Object.keys(tools).forEach(toolKey => {
-        if (toolKey === 'cursor') return; // Skip the cursor tool
         const tool = tools[toolKey];
-        const isBought = purchasedTools.includes(toolKey);
-        const canAfford = money >= tool.unlockPrice;
-
-        const item = document.createElement('div');
-        item.classList.add('store-item');
-
-        if (isBought || !canAfford) {
-            item.classList.add('disabled');
-            if (isBought) {
-                item.style.backgroundColor = 'lightgreen';
-            }
+        if (!toolsByTier[tool.tier]) {
+            toolsByTier[tool.tier] = [];
         }
-
-
-        item.onclick = () => {
-            if (!isBought && canAfford) {
-                money -= tool.unlockPrice;
-                purchasedTools.push(toolKey);
-                document.getElementById('money-display').textContent = `$${money.toFixed(2)}`;
-                initializeToolbar();
-                updateStore();
-            }
-        };
-
-        item.innerHTML = `
-        <div style="font-size: 24px;">${tool.icon}</div>
-        <div style="font-size: 14px;">$${tool.unlockPrice}</div>
-        <div style="font-size: 12px;">${tool.name}</div>
-        <div style="font-size: 12px;">${isBought ? 'Bought' : ''}</div>
-    `;
-            storeGrid.appendChild(item);
+        toolsByTier[tool.tier].push({ key: toolKey, ...tool });
     });
+
+    // Sort tiers numerically and create a section for each tier
+    Object.keys(toolsByTier)
+        .sort((a, b) => parseInt(a) - parseInt(b))
+        .forEach(tier => {
+
+            if (tier > currentTier) return; // Skip tiers above the current tier
+            // Create tier section
+            const tierSection = document.createElement('div');
+            tierSection.classList.add('tier-section');
+            tierSection.innerHTML = `<h3>Level ${tier} Upgrades</h3>`;
+
+            // Create a grid container for tools in this tier
+            const tierGrid = document.createElement('div');
+            tierGrid.classList.add('tier-grid');
+            tierGrid.style.display = 'grid';
+            tierGrid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+            tierGrid.style.gap = '10px'; // Space between items
+
+            const tierTools = toolsByTier[tier];
+            tierTools.forEach(({ key: toolKey, name, icon, unlockPrice }) => {
+                if (toolKey === 'cursor') return; // Skip the cursor tool
+                const isBought = purchasedTools.includes(toolKey);
+                const canAfford = money >= unlockPrice;
+
+                const item = document.createElement('div');
+                item.classList.add('store-item');
+
+                if (isBought || !canAfford) {
+                    item.classList.add('disabled');
+                    if (isBought) {
+                        item.style.backgroundColor = 'lightgreen';
+                    }
+                }
+
+                item.onclick = () => {
+                    if (!isBought && canAfford) {
+                        money -= unlockPrice;
+                        purchasedTools.push(toolKey);
+                        document.getElementById('money-display').textContent = `$${money.toFixed(2)}`;
+                        initializeToolbar();
+                        updateStore();
+                    }
+                };
+                item.title = tools[toolKey].tooltip;
+                item.innerHTML = `
+                    <div style="font-size: 24px;">${icon}</div>
+                    <div style="font-size: 14px;">$${unlockPrice}</div>
+                    <div style="font-size: 12px;">${name}</div>
+                    <div style="font-size: 12px;">${isBought ? 'Bought' : ''}</div>
+                `;
+
+                // Add the tool to the tier grid
+                tierGrid.appendChild(item);
+            });
+
+            // Append the tier grid to the tier section
+            tierSection.appendChild(tierGrid);
+
+            // Append the tier section to the store grid
+            storeGrid.appendChild(tierSection);
+        });
 }
 
 
@@ -491,9 +561,6 @@ function startGrowth() {
         grid.forEach(row => row.forEach(plot => plot.grow()));
     }, 50);
 }
-
-
-
 
 
 // Initialize
