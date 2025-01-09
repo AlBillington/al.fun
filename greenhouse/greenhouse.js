@@ -412,8 +412,6 @@ function updateMoney() {
     moneyDisplay.textContent = `$${money.toFixed(2)}`;
 }
 
-let unlockPrice = 500; // Cost to upgrade tier
-
 function initializeStore() {
     const storePanel = document.getElementById('store-panel');
 
@@ -428,7 +426,7 @@ function updateTierButton() {
     // Update the Upgrade Tier button
     const upgradeButton = document.getElementById('upgrade-tier-button');
 
-    const canAfford = money >= unlockPrice;
+    const canAfford = money >= nextTierCost[currentTier];
 
     if (!canAfford) {
         upgradeButton.classList.add('disabled');
@@ -447,7 +445,7 @@ function updateTierButton() {
 }
 
 function upgradeTier() {
-
+    let unlockPrice = nextTierCost[currentTier]
     if (money >= unlockPrice) {
         // Deduct money and upgrade the tier
         money -= unlockPrice;
