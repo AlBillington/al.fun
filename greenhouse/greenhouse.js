@@ -1,7 +1,7 @@
 const gridSize = 4;
 const grid = [];
 const toolbar = [];
-let money = 5;
+let money = 149;
 let selectedTool = 1; 
 let selectedSoil = null; 
 let currentTier = 1;
@@ -410,6 +410,7 @@ function toggleStore() {
 function updateMoney() {
     const moneyDisplay = document.getElementById('money-display');
     moneyDisplay.textContent = `$${money.toFixed(2)}`;
+    updateTierButton()
 }
 
 function initializeStore() {
@@ -427,12 +428,12 @@ function updateTierButton() {
     const upgradeButton = document.getElementById('upgrade-tier-button');
 
     const canAfford = money >= nextTierCost[currentTier];
+    upgradeButton.classList.remove('disabled');
 
     if (!canAfford) {
         upgradeButton.classList.add('disabled');
     }
     if (currentTier > 4) {
-        upgradeButton.classList.add('disabled');
         upgradeButton.innerHTML = `
             <div style="font-size: 14px;">Max Level Reached</div>
         `;
