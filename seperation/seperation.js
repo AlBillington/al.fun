@@ -54,7 +54,6 @@ function loadPuzzle(level) {
     resultBanner.style.display = "none"; // Hide the win banner
 }
 
-// Create boxes for each word
 function createWordBoxes(word, isFixed) {
     const wordDiv = document.createElement("div");
     wordDiv.classList.add("word-row");
@@ -64,7 +63,21 @@ function createWordBoxes(word, isFixed) {
         letterBox.type = "text";
         letterBox.maxLength = 1;
         letterBox.classList.add("letter-box");
-        letterBox.readOnly = true; // Disable cursor
+        letterBox.readOnly = true; // Start with readonly to disable text cursor
+
+        // Temporarily remove readonly on focus to show mobile keyboard
+        letterBox.addEventListener("focus", () => {
+            if (!isFixed) {
+                letterBox.readOnly = false; // Enable keyboard input
+            }
+        });
+
+        // Restore readonly on blur to maintain UX consistency
+        letterBox.addEventListener("blur", () => {
+            letterBox.readOnly = true; // Disable keyboard input
+        });
+
+        // Handle key presses
         letterBox.addEventListener("keydown", (e) => handleKeyPress(e, wordDiv, letterBox));
 
         if (isFixed) {
@@ -77,6 +90,7 @@ function createWordBoxes(word, isFixed) {
 
     puzzleContainer.appendChild(wordDiv);
 }
+
 
 // Handle key presses to set the letter and navigate
 function handleKeyPress(event, wordDiv, currentBox) {
