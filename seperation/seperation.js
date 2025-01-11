@@ -1,3 +1,4 @@
+// Hey! No peeking! 😠
 const wordConnections = [
     { start: "race", path: ["car"], end: "pool" },
     { start: "snow", path: ["man", "cave"], end: "painting" },
