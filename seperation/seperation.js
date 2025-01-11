@@ -1,18 +1,18 @@
 // Hey! No peeking! 😠
 const wordConnections = [
-    { start: "race", path: ["car"], end: "pool" },
-    { start: "snow", path: ["man", "cave"], end: "painting" },
-    { start: "dog", path: ["house", "party"], end: "dress" },
-    { start: "light", path: ["bulb", "socket"], end: "wrench" },
-    { start: "paper", path: ["trail", "mix"], end: "tape" },
-    { start: "apple", path: ["pie", "dish"], end: "soap" },
-    { start: "moon", path: ["rock", "climbing"], end: "gear" },
-    { start: "tree", path: ["house", "party"], end: "trick" },
-    { start: "fire", path: ["alarm", "clock"], end: "tower" },
-    { start: "road", path: ["map", "key", "chain"], end: "reaction" },
-    { start: "book", path: ["cover", "story", "time"], end: "machine" },
-    { start: "car", path: ["seat", "belt", "loop"], end: "hole" },
-    { start: "road", path: ["map", "key", "chain"], end: "reaction" },
+    { start: "race", path: ["car", "pool"] },
+    { start: "snow", path: ["man", "cave", "painting"] },
+    { start: "dog", path: ["house", "party", "dress"] },
+    { start: "light", path: ["bulb", "socket", "wrench"] },
+    { start: "paper", path: ["trail", "mix", "tape"] },
+    { start: "apple", path: ["pie", "dish", "soap"] },
+    { start: "moon", path: ["rock", "climbing", "gear"] },
+    { start: "tree", path: ["house", "party", "trick"] },
+    { start: "fire", path: ["alarm", "clock", "tower"] },
+    { start: "road", path: ["map", "key", "chain", "reaction"] },
+    { start: "book", path: ["cover", "story", "time", "machine"] },
+    { start: "car", path: ["seat", "belt", "loop", "hole"] },
+    { start: "road", path: ["map", "key", "chain", "reaction"] }
 ];
 
 
@@ -27,7 +27,6 @@ const triesDisplay = document.getElementById("tries-display");
 let currentLevel = 0;
 let remainingTries = 4;
 
-// Load a puzzle by level
 function loadPuzzle(level) {
     const puzzle = wordConnections[level];
     if (!puzzle) {
@@ -46,39 +45,42 @@ function loadPuzzle(level) {
 
     // Create puzzle layout
     puzzleContainer.innerHTML = ""; // Clear previous puzzle
-    createWordBoxes(puzzle.start, true); // Start word
+    createWordBoxes(puzzle.start, true); // Start word (prefilled and fixed)
 
-    puzzle.path.forEach((word) => createWordBoxes(word, false)); // Intermediate words
+    puzzle.path.forEach((word, index) => {
+        // Prefill the first letter for each word except the first
+        const isLast = index === puzzle.path.length - 1;
+        createWordBoxes(word, false, isLast);
+    });
 
-    createWordBoxes(puzzle.end, true); // End word
     resultBanner.style.display = "none"; // Hide the win banner
 }
 
-function createWordBoxes(word, isFixed) {
+function createWordBoxes(word, isFixed, isLast = false) {
     const wordDiv = document.createElement("div");
     wordDiv.classList.add("word-row");
 
-    [...word].forEach((letter) => {
+    [...word].forEach((letter, index) => {
         const letterBox = document.createElement("input");
         letterBox.type = "text";
         letterBox.maxLength = 1;
         letterBox.classList.add("letter-box");
 
-        // Fixed letters remain disabled
-        if (isFixed) {
-            letterBox.value = letter.toUpperCase();
-            letterBox.disabled = true;
+        if (isFixed || (index === 0)) {
+            letterBox.value = letter.toUpperCase(); // Prefill the first letter
+            letterBox.disabled = true; // Disable editing
             letterBox.classList.add("fixed-letter");
         } else {
-            // Handle key presses
+            // For the last word, user must fill in the rest of the letters
             letterBox.addEventListener("keydown", (e) => handleKeyPress(e, wordDiv, letterBox));
-        }
+        } 
 
         wordDiv.appendChild(letterBox);
     });
 
     puzzleContainer.appendChild(wordDiv);
 }
+
 
 
 
@@ -137,51 +139,53 @@ function handleKeyPress(event, wordDiv, currentBox) {
 // Check the user's solution
 function checkSolution() {
     const currentPuzzle = wordConnections[currentLevel];
-    const userWords = Array.from(puzzleContainer.children)
-        .slice(1, -1) // Skip the first and last words
-        .map((wordDiv) =>
-            Array.from(wordDiv.children)
-                .map((input) => input.value.trim().toLowerCase())
-                .join("")
-        );
+    const correctWords = [...currentPuzzle.path]; // Get all words (path)
+    const userWords = []; // Collect user inputs for validation
 
-    const correctWords = currentPuzzle.path;
+    // Extract user inputs from the puzzle container
+    const wordRows = Array.from(puzzleContainer.children).slice(1); // Skip the first (start word)
+    wordRows.forEach((wordDiv) => {
+        const userWord = Array.from(wordDiv.children)
+            .map((input) => input.value.trim().toLowerCase())
+            .join("");
+        userWords.push(userWord);
+    });
 
-    let isComplete = true;
-
-    // Highlight correct letters
-    puzzleContainer.querySelectorAll(".word-row").forEach((wordDiv, rowIndex) => {
+    // Highlight letters and validate words
+    let isComplete = true; // Check if the puzzle is fully correct
+    wordRows.forEach((wordDiv, rowIndex) => {
+        const correctWord = correctWords[rowIndex];
         Array.from(wordDiv.children).forEach((input, charIndex) => {
-            if (rowIndex > 0 && rowIndex <= correctWords.length) {
-                const correctWord = correctWords[rowIndex - 1];
-                if (input.value.toLowerCase() === correctWord[charIndex]) {
-                    input.style.backgroundColor = "#a8d5a2"; // Washed-out green for correct letters
-                } else {
-                    input.style.backgroundColor = ""; // Reset color
-                    isComplete = false;
-                }
+            if (charIndex === 0) return; // Skip the first letter
+            if (input.value.toLowerCase() === correctWord[charIndex]) {
+                input.style.backgroundColor = "#a8d5a2"; // Correct letters in washed-out green
+            } else {
+                input.style.backgroundColor = ""; // Reset color for incorrect letters
+                isComplete = false; // Mark the puzzle as incomplete
             }
         });
     });
 
-    if (isComplete) {
-        resultBanner.textContent = " Correct! ";
+    // Check if all words match
+    const allWordsCorrect = userWords.every((word, index) => word === correctWords[index]);
+
+    if (allWordsCorrect && isComplete) {
+        resultBanner.textContent = "🎉 Correct! Loading next level... 🎉";
         resultBanner.style.display = "block";
         setTimeout(() => {
             currentLevel++;
             loadPuzzle(currentLevel);
         }, 1500);
-        return;
-    }
+    } else {
+        // Decrease tries if the puzzle isn't solved
+        remainingTries--;
+        triesDisplay.textContent = `Tries Left: ${remainingTries}`;
 
-    // Decrease tries
-    remainingTries--;
-    triesDisplay.textContent = `Tries Left: ${remainingTries}`;
-
-    if (remainingTries <= 0) {
-        resultBanner.textContent = "❌ Out of tries! Reloading level... ❌";
-        resultBanner.style.display = "block";
-        setTimeout(() => loadPuzzle(currentLevel), 1500);
+        if (remainingTries <= 0) {
+            resultBanner.textContent = "Out of tries! Reloading level...";
+            resultBanner.style.display = "block";
+            setTimeout(() => loadPuzzle(currentLevel), 1500);
+        }
     }
 }
 
