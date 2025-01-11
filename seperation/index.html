@@ -78,7 +78,24 @@
             background-color: #bbb;
             border-color: #999;
         }
+        /* Adjust for smaller screens */
+        @media (max-width: 768px) {
+            .letter-box {
+                width: 30px;
+                height: 30px;
+                font-size: 16px;
+                margin: 3px;
+            }
+        }
 
+        @media (max-width: 480px) {
+            .letter-box {
+                width: 25px;
+                height: 25px;
+                font-size: 14px;
+                margin: 2px;
+            }
+        }
 
     </style>
 </head>
