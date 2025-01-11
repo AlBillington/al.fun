@@ -92,14 +92,13 @@ function handleKeyPress(event, wordDiv, currentBox) {
 
     // Handle Delete and Backspace
     if (event.key === "Backspace") {
+        currentWordBoxes[currentIndex].value = ""; // Clear the box
         if (currentIndex > 0) {
-            currentWordBoxes[currentIndex].value = ""; // Clear the box
             currentWordBoxes[currentIndex - 1].focus(); // Move focus to the previous box
         } else {
             const prevWordDiv = wordDiv.previousElementSibling;
             if (prevWordDiv) {
                 const lastBox = prevWordDiv.children[prevWordDiv.children.length - 1];
-                lastBox.value = ""; // Clear the last box in the previous row
                 lastBox.focus(); // Move focus to the last box in the previous row
             }
         }
