@@ -63,33 +63,23 @@ function createWordBoxes(word, isFixed) {
         letterBox.type = "text";
         letterBox.maxLength = 1;
         letterBox.classList.add("letter-box");
-        letterBox.readOnly = true; // Start with readonly to disable text cursor
 
-        // Temporarily remove readonly on focus to show mobile keyboard
-        letterBox.addEventListener("focus", () => {
-            if (!isFixed) {
-                letterBox.readOnly = false; // Enable keyboard input
-            }
-        });
-
-        // Restore readonly on blur to maintain UX consistency
-        letterBox.addEventListener("blur", () => {
-            letterBox.readOnly = true; // Disable keyboard input
-        });
-
-        // Handle key presses
-        letterBox.addEventListener("keydown", (e) => handleKeyPress(e, wordDiv, letterBox));
-
+        // Fixed letters remain disabled
         if (isFixed) {
             letterBox.value = letter.toUpperCase();
             letterBox.disabled = true;
             letterBox.classList.add("fixed-letter");
+        } else {
+            // Handle key presses
+            letterBox.addEventListener("keydown", (e) => handleKeyPress(e, wordDiv, letterBox));
         }
+
         wordDiv.appendChild(letterBox);
     });
 
     puzzleContainer.appendChild(wordDiv);
 }
+
 
 
 // Handle key presses to set the letter and navigate
