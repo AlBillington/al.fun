@@ -1,4 +1,4 @@
-const gridSize = 4;
+let gridSize = 4;
 const grid = [];
 const toolbar = [];
 let money = 5;
@@ -31,6 +31,9 @@ class Tool {
         this.backgroundColor = backgroundColor;
         this.tier = tier;
         this.tooltip = tooltip;
+        if (!this.tooltip && type === 'seed') {
+            this.tooltip = `Cost $${price.toFixed(2)}, sells for $${fruits[name.toLowerCase().split(' ')[0]].price.toFixed(2)}.  Matures in ${fruits[name.toLowerCase().split(' ')[0]].growTime} seconds`;
+        }
     }
 }
 
@@ -47,6 +50,8 @@ const fruits = {
     cucumber: new Fruit('Cucumber', 18, 2, 'darkgreen'),
     onion: new Fruit('Onion', 30, 5, 'yellow'),
     pumpkin: new Fruit('Pumpkin', 40, 10, 'orange'),
+    kiwi: new Fruit('Kiwi', 6, 10, 'brown'),
+    eggplant: new Fruit('Eggplant', 30, 70, 'purple')
 };
 
 const tools = {
@@ -55,13 +60,18 @@ const tools = {
     cucumberSeed: new Tool('Cucumber Seed', '🥒', 0.40, 'seed', 1, 30),
     onionSeed: new Tool('Onion Seed', '🧅', 1, 'seed', 2, 70),
     pumpkinSeed: new Tool('Pumpkin Seed', '🎃', 3, 'seed', 3, 200),
+    kiwiSeed: new Tool('Kiwi Seed', '🥝', 3, 'seed', 4, 600),
+    eggPlantSeed: new Tool('Eggplant Seed', '🍆', 5, 'seed', 5, 2000),
+
     normalSoil: new Tool('Normal Pot', '🟫', 1, 'soil', 1, 20, 'sandybrown', tooltip='A pot lol'),
-    advancedSoil: new Tool('Advanced Pot', 'A', 3, 'soil', 1, 50, 'saddlebrown', tooltip='Better pot will yield 2x as much per plant'),
-    superSoil: new Tool('Super Pot', 'S', 5, 'soil', 3, 200, 'brown',  tooltip='Better pot will yield 2x as much per plant'),
-    megaSoil: new Tool('Mega Pot', 'M', 10, 'soil', 4, 500, 'darkgrey', tooltip='Better pot will yield 2x as much per plant'),
+    advancedSoil: new Tool('Advanced Pot', 'A', 3, 'soil', 2, 50, 'saddlebrown', tooltip='Better pot will yield 2x as much per plant'),
+    superSoil: new Tool('Super Pot', 'S', 5, 'soil', 3, 200, 'brown',  tooltip='Better pot will yield 3x as much per plant'),
+    megaSoil: new Tool('Mega Pot', 'M', 10, 'soil', 4, 500, 'darkgrey', tooltip='Better pot will yield 5x as much per plant'),
+
+    autoWater: new Tool('Irrigation', '💦', 0, 'automation', 2, 200, '', tooltip='Adds water to your crops, making them grow 20% faster'),
     autoFertilize: new Tool('Auto Fertilizer', '💩', 0, 'automation', 3, 500, '', tooltip='Adds fertilizer to your crops, making them grow 50% faster'),
-    autoSeeder: new Tool('Auto Planter', '🌱', 0, 'automation', 2, 200, '', tooltip='after you harvest a crop, it will be automatically replanted'),
-    autoPlanter: new Tool('Auto Harvester', '🚜', 0, 'automation', 4, 2000, '', tooltip='Crops will be harvested automatically once they are ready'),
+    autoSeeder: new Tool('Auto Planter', '🌱', 0, 'automation', 4, 200, '', tooltip='after you harvest a crop, it will be automatically replanted'),
+    autoPlanter: new Tool('Auto Harvester', '🚜', 0, 'automation', 5, 5000, '', tooltip='Crops will be harvested automatically once they are ready'),
 };
 
 const soilTypes = {
@@ -118,14 +128,20 @@ class Plot {
         if (this.fruit) {
 
             let increment = 1;
+            if (purchasedTools.includes('autoWater')) {
+                increment = increment * 1.2;
+            }
             if (purchasedTools.includes('autoFertilize')) {
-                increment = 1.5;
+                increment = increment * 1.5;
             }
             this.timer += increment;
-            const growthStage = Math.floor((this.timer / this.fruit.growTime));
+            const growthDuration = this.timer / this.fruit.growTime
+            const growthStage = Math.floor(growthDuration);
             if (growthStage >= 9 * increment) {
                 this.state = 'overripe';
-            } else if (growthStage === 4) {
+            } else if (growthStage >= 4 ) {
+                const multiplier = soilTypes[this.potType].multiplier;
+                this.fruitCount = Math.min((Math.ceil((growthDuration - 4) * multiplier)), Math.ceil(multiplier))
                 this.state = 'fruit';
             } else if (growthStage === 3) {
                 this.state = 'grown';
@@ -136,31 +152,68 @@ class Plot {
             }
         
             if (growthStage == 8 && purchasedTools.includes('autoPlanter')) {
-                let earnings = this.fruit.price * soilTypes[this.potType].multiplier;
+                let earnings = this.fruit.price * this.fruitCount
                 money += earnings;
                 // Show the floating text near the clicked fruit
                     const rect = this.canvas.getBoundingClientRect();
                     showFloatingText(`+$${earnings.toFixed(0)}`, rect.left + rect.width / 2, rect.top);
                 this.reset()
-                updateMoney()
+                updateState()
             }
         }
         this.updateAppearance();
     }
 
-    reset() {
-        if (!purchasedTools.includes('autoSeeder')) {
+    reset(selectedTool) {
+        const toolKey = selectedTool?.name?.toLowerCase()?.split(' ')[0] ?? ''
+        if (!purchasedTools.includes('autoSeeder') || toolKey == 'cursor' ) {
             this.fruit = null;
-        } 
+        } else {
+            if (fruits[toolKey]) {
+            this.fruit = fruits[toolKey];
+            }
+        }
         this.timer = 0;
         this.state = 'dirt'; 
         this.leaves = null;
         this.fruitPositions = null;
+        this.fruitCount = 0;
         this.updateAppearance();
     }
  
 
     drawPlant() {
+
+        function drawLeaf(ctx, centerX, leafY, angle, size, growth, borderColor = '#111', fillColor = 'green') {
+            ctx.save();
+            ctx.translate(centerX, leafY);
+            ctx.rotate(angle);
+        
+            // Draw leaf border
+            ctx.fillStyle = borderColor;
+            ctx.beginPath();
+            ctx.ellipse(
+                size * growth, 0, // Position of the ellipse
+                Math.abs(size) * growth *1.1, // Slightly larger for border
+                (Math.abs(size) / 2) * growth + 1, // Slightly larger for border
+                0, 0, Math.PI * 2
+            );
+            ctx.fill();
+        
+            // Draw leaf body
+            ctx.fillStyle = fillColor;
+            ctx.beginPath();
+            ctx.ellipse(
+                size * growth, 0, // Position of the ellipse
+                Math.abs(size) * growth,
+                (Math.abs(size) / 2) * growth,
+                0, 0, Math.PI * 2
+            );
+            ctx.fill();
+        
+            ctx.restore();
+        }
+             
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     
@@ -174,7 +227,7 @@ class Plot {
     
         // Draw stem based on growth factor
         ctx.strokeStyle = 'green';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = Math.max(1, growthFactor * 4);
         ctx.beginPath();
         ctx.moveTo(centerX, baseY);
         ctx.lineTo(centerX, baseY - stemHeight);
@@ -186,9 +239,8 @@ class Plot {
             const leafCount = 8; // Fixed maximum number of leaves
             for (let i = 0; i < leafCount; i++) {
                 this.leaves.push({
-                    y: Math.random() * 0.9 + 0.1, // Position near the top of the stem (60-80%)
-                    leftSize: Math.random() * 6 + 4, // Left leaf size
-                    rightSize: Math.random() * 6 + 4, // Right leaf size
+                    y: Math.random() * 0.2 + 0.1 + i/leafCount, // Position near the top of the stem (60-80%)
+                    size: Math.random() * 6 + 4, // Left leaf size
                     leftAngle: Math.random() * 0.6, // Slight upward angle for left leaves
                     rightAngle: Math.random() * -0.6, // Slight upward angle for right leaves
                     growthStart: 0 // Track when growth starts
@@ -207,52 +259,43 @@ class Plot {
                     leaf.growthStart = growthFactor; // Record when leaf starts growing
                 }
                 const leafGrowth = Math.max(0, Math.min(1, (growthFactor - leaf.growthStart) * 2)); // Grow leaves gradually
-    
-                // Left leaf
-                ctx.save();
-                ctx.translate(centerX, leafY);
-                ctx.rotate(leaf.leftAngle);
-                ctx.beginPath();
-                ctx.ellipse(-leaf.leftSize * leafGrowth, 0, leaf.leftSize * leafGrowth, (leaf.leftSize / 2) * leafGrowth, 0, 0, Math.PI * 2);
-                ctx.fillStyle = 'green';
-                ctx.fill();
-                ctx.restore();
-    
-                // Right leaf
-                ctx.save();
-                ctx.translate(centerX, leafY);
-                ctx.rotate(leaf.rightAngle);
-                ctx.beginPath();
-                ctx.ellipse(leaf.rightSize * leafGrowth, 0, leaf.rightSize * leafGrowth, (leaf.rightSize / 2) * leafGrowth, 0, 0, Math.PI * 2);
-                ctx.fillStyle = 'green';
-                ctx.fill();
-                ctx.restore();
+
+                drawLeaf(ctx, centerX, leafY, leaf.leftAngle, -leaf.size, leafGrowth);
+                drawLeaf(ctx, centerX, leafY, leaf.rightAngle, leaf.size, leafGrowth);
+                
             }
         });
                     
         // Draw fruit based on state
         if (this.state === 'fruit' || this.state === 'overripe') {
-            const radius = 6; // Fixed size for each fruit
-            const color = this.state === 'fruit' ? this.fruit.color : 'brown'; // Color depends on state
+            let radius = 6;
+            let color = this.fruit.color;
+            if (this.state === 'overripe') {
+                radius = 4; // Fixed size for each fruit
+                color = 'black';
+            }
 
             // Draw each fruit at its pre-generated position
 
             if (!this.fruitPositions) {
                 // Generate positions once
                 this.fruitPositions = [];
-                const fruitCount = soilTypes[this.potType].multiplier; // Number of fruits based on pot type
-                const jitter = 5; // Maximum random offset for bunching
-                for (let i = 0; i < fruitCount; i++) {
+                const x_jitter = 5; // Maximum random offset for bunching
+                const y_jitter = 15; // Maximum random offset for bunching
+                for (let i = 0; i < 10; i++) {
                     this.fruitPositions.push({
-                        offsetX: (Math.random() - 0.5) * jitter * 2,
-                        offsetY: (Math.random() - 0.5) * jitter * 2
+                        offsetX: (Math.random() - 0.5) * x_jitter * 2,
+                        offsetY: (Math.random() - 0.5) * y_jitter * 2
                     });
                 }
             }
 
-            this.fruitPositions.forEach(position => {
+            this.fruitPositions.forEach((position, i) => {
+                if (i > this.fruitCount - 1) {
+                    return;
+                }
                 const x = centerX + position.offsetX; // Apply pre-generated X offset
-                const y = baseY - stemHeight + position.offsetY; // Apply pre-generated Y offset
+                const y = baseY - stemHeight + 20 + position.offsetY; // Apply pre-generated Y offset
 
                 // Draw fruit border (near black)
                 ctx.fillStyle = '#111'; // Near black border
@@ -291,13 +334,13 @@ function initializeGrid() {
             plot.canvas.addEventListener('click', () => {
                 if (plot.state === 'fruit' || plot.state === 'overripe') {
                     if (plot.state === 'fruit') {
-                        earnings = plot.fruit.price * soilTypes[plot.potType].multiplier;
+                        earnings = plot.fruit.price * plot.fruitCount;
                         money += earnings;
                         // Show the floating text near the clicked fruit
                             const rect = plot.canvas.getBoundingClientRect();
                             showFloatingText(`+$${earnings.toFixed(0)}`, rect.left + rect.width / 2, rect.top);
                     }
-                    plot.reset();
+                    plot.reset(selectedTool);
                 } 
                 else if (selectedTool && money >= selectedTool.price) {
                     if (selectedTool.type === 'soil' && plot.potType === 'empty') {
@@ -323,7 +366,7 @@ function initializeGrid() {
                         }
                     }
                 }
-                updateMoney();
+                updateState();
             });
 
             grid[i][j] = plot;
@@ -392,6 +435,7 @@ let storeOpen = false;
 let growInterval; // Track the growth interval
 
 function toggleStore() {
+    updateState();
     storeOpen = !storeOpen;
     const storePanel = document.getElementById('store-panel');
     const gameContainer = document.getElementById('game-container');
@@ -406,24 +450,12 @@ function toggleStore() {
         startGrowth(); // Resume growth
     }
 }
-
-function updateMoney() {
-    const moneyDisplay = document.getElementById('money-display');
-    moneyDisplay.textContent = `$${money.toFixed(2)}`;
-    updateTierButton()
-}
-
-function initializeStore() {
-    const storePanel = document.getElementById('store-panel');
-
-    updateTierButton()
-
-    document.body.appendChild(storePanel);
-}
-
 const nextTierCost = [0, 150, 500, 1500, 3500, 8500];
 
-function updateTierButton() {
+function updateState() {
+    const moneyDisplay = document.getElementById('money-display');
+    moneyDisplay.textContent = `$${money.toFixed(2)}`;
+
     // Update the Upgrade Tier button
     const upgradeButton = document.getElementById('upgrade-tier-button');
 
@@ -445,6 +477,12 @@ function updateTierButton() {
     }
 }
 
+function initializeStore() {
+    const storePanel = document.getElementById('store-panel');
+    document.body.appendChild(storePanel);
+}
+
+
 function upgradeTier() {
     let unlockPrice = nextTierCost[currentTier]
     if (money >= unlockPrice) {
@@ -452,8 +490,7 @@ function upgradeTier() {
         money -= unlockPrice;
         currentTier++;
         unlockPrice = nextTierCost[currentTier];
-        updateTierButton()
-        updateMoney()
+        updateState()
         updateStore()
     } 
 
@@ -566,4 +603,5 @@ function startGrowth() {
 initializeStore();
 initializeGrid();
 initializeToolbar();
+updateState();  
 startGrowth(); // Start growth initially
