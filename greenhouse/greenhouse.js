@@ -4,6 +4,7 @@ const toolbar = [];
 let selectedTool = 1; 
 let selectedSoil = null; 
 let currentTier = 1;
+let hasWon = false;
 const startTime = new Date();
 
 let purchasedTools = ['cursor', 'normalSoil', 'tomatoSeed']; // Start with Tomato Seeds only
@@ -564,7 +565,11 @@ function updateState() {
     moneyDisplay.textContent = `$${money.toFixed(2)}`;
     updateStore()
     if (money >= 10000) {
-        showPopup(`Well Yeee-haw! You got to $10,000 in ${formatElapsedTime()} seconds.`);
+        const finalTime = formatElapsedTime();
+        if (!hasWon) {
+            showPopup(`Well Yeee-haw! You got to $10,000 in ${finalTime}.`);
+            hasWon = true
+        }
     } else if (money < .25) {
         // check if any plots have plants in them
         let hasPlants = false
@@ -575,7 +580,7 @@ function updateState() {
         })
         )
         if (!hasPlants) {
-            showPopup(`Aww shucks, you ran out of money! Try again?`, 'Yes');
+            showPopup(`Aww shucks, you ran out of money! Try again?`, 'Yes', true);
         }
     }
 
@@ -601,7 +606,7 @@ function updateState() {
     }
 }
 
-function showPopup(message, buttonText = 'OK') {
+function showPopup(message, buttonText = 'OK', reloadPage = false) {
     // Create the overlay
     const overlay = document.createElement('div');
     overlay.style.position = 'fixed';
@@ -640,11 +645,16 @@ function showPopup(message, buttonText = 'OK') {
     closeButton.style.color = '#fff';
     closeButton.style.borderRadius = '5px';
     closeButton.style.cursor = 'pointer';
-
-    closeButton.addEventListener('click', () => {
-        document.body.removeChild(overlay);
-        location.reload();
-    });
+    if (reloadPage) {
+        closeButton.addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            location.reload();
+        });
+    } else {
+        closeButton.addEventListener('click', () => {
+            document.body.removeChild(overlay);
+        });
+    }
 
     popup.appendChild(closeButton);
     overlay.appendChild(popup);
