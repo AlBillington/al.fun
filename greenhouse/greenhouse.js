@@ -1,23 +1,27 @@
 let gridSize = 4;
 const grid = [];
 const toolbar = [];
-let money = 5;
 let selectedTool = 1; 
 let selectedSoil = null; 
 let currentTier = 1;
+const startTime = new Date();
 
 let purchasedTools = ['cursor', 'normalSoil', 'tomatoSeed']; // Start with Tomato Seeds only
+
+let elapsedTime = 0;
+let money = 25;
 
 
 const gameContainer = document.getElementById('game-container');
 const toolbarContainer = document.getElementById('toolbar-container');
 
 class Fruit {
-    constructor(name, growTime, price, color) {
+    constructor(name, growTime, price, color, groundGrower = false) {
         this.name = name;
         this.growTime = growTime;
         this.price = price;
         this.color = color;
+        this.groundGrower = groundGrower;
     }
 }
 
@@ -46,12 +50,12 @@ class SoilType {
 }
 
 const fruits = {
-    tomato: new Fruit('Tomato', 10, 1, 'red'),
-    cucumber: new Fruit('Cucumber', 18, 2, 'darkgreen'),
-    onion: new Fruit('Onion', 30, 5, 'yellow'),
-    pumpkin: new Fruit('Pumpkin', 40, 10, 'orange'),
-    kiwi: new Fruit('Kiwi', 6, 10, 'brown'),
-    eggplant: new Fruit('Eggplant', 30, 70, 'purple')
+    tomato: new Fruit('Tomato', 10, 1, '#ad0000'),
+    cucumber: new Fruit('Cucumber', 18, 2, '#7bd18a'),
+    onion: new Fruit('Onion', 30, 5, '#dee1a8', groundGrower = true),
+    pumpkin: new Fruit('Pumpkin', 40, 10, '#d77c14', groundGrower = true),
+    strawberry: new Fruit('Strawberry', 8, 8, '#bcd981'),
+    eggplant: new Fruit('Eggplant', 30, 50, '#7c59d4')
 };
 
 const tools = {
@@ -60,18 +64,20 @@ const tools = {
     cucumberSeed: new Tool('Cucumber Seed', '🥒', 0.40, 'seed', 1, 30),
     onionSeed: new Tool('Onion Seed', '🧅', 1, 'seed', 2, 70),
     pumpkinSeed: new Tool('Pumpkin Seed', '🎃', 3, 'seed', 3, 200),
-    kiwiSeed: new Tool('Kiwi Seed', '🥝', 3, 'seed', 4, 600),
-    eggPlantSeed: new Tool('Eggplant Seed', '🍆', 5, 'seed', 5, 2000),
+    strawberrySeed: new Tool('Strawberry Seed', '🍓', 8, 'seed', 4, 600),
+    eggplantSeed: new Tool('Eggplant Seed', '🍆', 30, 'seed', 5, 2000),
 
     normalSoil: new Tool('Normal Pot', '🟫', 1, 'soil', 1, 20, 'sandybrown', tooltip='A pot lol'),
-    advancedSoil: new Tool('Advanced Pot', 'A', 3, 'soil', 2, 50, 'saddlebrown', tooltip='Better pot will yield 2x as much per plant'),
-    superSoil: new Tool('Super Pot', 'S', 5, 'soil', 3, 200, 'brown',  tooltip='Better pot will yield 3x as much per plant'),
-    megaSoil: new Tool('Mega Pot', 'M', 10, 'soil', 4, 500, 'darkgrey', tooltip='Better pot will yield 5x as much per plant'),
+    advancedSoil: new Tool('Advanced Pot', 'A', 3, 'soil', 2, 100, 'saddlebrown', tooltip='Better pot will yield 2x as much per plant'),
+    superSoil: new Tool('Super Pot', 'S', 5, 'soil', 4, 400, 'brown',  tooltip='Better pot will yield 3x as much per plant'),
+    megaSoil: new Tool('Mega Pot', 'M', 10, 'soil', 5, 800, 'darkgrey', tooltip='Better pot will yield 5x as much per plant'),
+
+    autoFarmer: new Tool('Farmer', '👨‍🌾', 50, 'addon', 3, 400, '', tooltip='Add to a pot to automatically harvest them'),
 
     autoWater: new Tool('Irrigation', '💦', 0, 'automation', 2, 200, '', tooltip='Adds water to your crops, making them grow 20% faster'),
     autoFertilize: new Tool('Auto Fertilizer', '💩', 0, 'automation', 3, 500, '', tooltip='Adds fertilizer to your crops, making them grow 50% faster'),
     autoSeeder: new Tool('Auto Planter', '🌱', 0, 'automation', 4, 200, '', tooltip='after you harvest a crop, it will be automatically replanted'),
-    autoPlanter: new Tool('Auto Harvester', '🚜', 0, 'automation', 5, 5000, '', tooltip='Crops will be harvested automatically once they are ready'),
+    autoHarvester: new Tool('Auto Harvester', '🚜', 0, 'automation', 5, 5000, '', tooltip='All crops will be harvested automatically once they are ready'),
 };
 
 const soilTypes = {
@@ -118,10 +124,12 @@ class Plot {
         this.potType = potType;
         this.canvas = document.createElement('canvas');
         this.ctx = this.canvas.getContext('2d');
-        this.canvas.width = 80;
-        this.canvas.height = 80;
+        this.canvas.width = 120;
+        this.canvas.height = 120;
         this.canvas.style.backgroundColor = soilTypes[this.potType].color;
         this.canvas.style.border = '1px solid black';
+        this.hasAutoFarm = false
+        this.fruitImage = new Image()
     }
 
     grow() {
@@ -151,7 +159,7 @@ class Plot {
                 this.state = 'seed';
             }
         
-            if (growthStage == 8 && purchasedTools.includes('autoPlanter')) {
+            if (growthStage == 8 && (purchasedTools.includes('autoPlanter') || this.hasAutoFarm)) {
                 let earnings = this.fruit.price * this.fruitCount
                 money += earnings;
                 // Show the floating text near the clicked fruit
@@ -165,6 +173,13 @@ class Plot {
     }
 
     reset(selectedTool) {
+
+        this.timer = 0;
+        this.state = 'dirt'; 
+        this.leaves = null;
+        this.fruitPositions = null;
+        this.fruitCount = 0;
+
         const toolKey = selectedTool?.name?.toLowerCase()?.split(' ')[0] ?? ''
         if (!purchasedTools.includes('autoSeeder') || toolKey == 'cursor' ) {
             this.fruit = null;
@@ -173,49 +188,65 @@ class Plot {
             this.fruit = fruits[toolKey];
             }
         }
-        this.timer = 0;
-        this.state = 'dirt'; 
-        this.leaves = null;
-        this.fruitPositions = null;
-        this.fruitCount = 0;
+
         this.updateAppearance();
     }
  
 
     drawPlant() {
 
-        function drawLeaf(ctx, centerX, leafY, angle, size, growth, borderColor = '#111', fillColor = 'green') {
+        function drawLeaf(ctx, centerX, leafY, angle, size, growth, side, borderColor = '#111', fillColor = 'green') {
             ctx.save();
             ctx.translate(centerX, leafY);
             ctx.rotate(angle);
         
+            // Leaf dimensions
+            const leafLength = Math.abs(size) * growth * 2.7;
+            const leafWidth = Math.abs(size) * growth * 0.8;
+        
+            // Flip the leaf if on the left side
+            const direction = side === 'left' ? -1 : 1;
+        
             // Draw leaf border
             ctx.fillStyle = borderColor;
             ctx.beginPath();
-            ctx.ellipse(
-                size * growth, 0, // Position of the ellipse
-                Math.abs(size) * growth *1.1, // Slightly larger for border
-                (Math.abs(size) / 2) * growth + 1, // Slightly larger for border
-                0, 0, Math.PI * 2
+            ctx.moveTo(0, 0); // Starting point at the base
+            ctx.bezierCurveTo(
+                direction * (leafLength / 3), -leafWidth, // Control point for the upper curve
+                direction * (leafLength / 3) * 2, -leafWidth, // Control point near the tip (upper side)
+                direction * leafLength, 0 // Tip of the leaf
             );
+            ctx.bezierCurveTo(
+                direction * (leafLength / 3) * 2, leafWidth, // Control point for the lower curve
+                direction * (leafLength / 3), leafWidth, // Control point near the base (lower side)
+                0, 0 // Return to the base
+            );
+            ctx.closePath();
             ctx.fill();
         
             // Draw leaf body
             ctx.fillStyle = fillColor;
             ctx.beginPath();
-            ctx.ellipse(
-                size * growth, 0, // Position of the ellipse
-                Math.abs(size) * growth,
-                (Math.abs(size) / 2) * growth,
-                0, 0, Math.PI * 2
+            ctx.moveTo(0, 0); // Starting point at the base
+            ctx.bezierCurveTo(
+                direction * (leafLength / 3), -leafWidth + 1, // Control point for the upper curve
+                direction * (leafLength / 3) * 2, -leafWidth + 1, // Control point near the tip (upper side)
+                direction * leafLength - 1, 0 // Tip of the leaf
             );
+            ctx.bezierCurveTo(
+                direction * (leafLength / 3) * 2, leafWidth - 1, // Control point for the lower curve
+                direction * (leafLength / 3), leafWidth - 1, // Control point near the base (lower side)
+                0, 0 // Return to the base
+            );
+            ctx.closePath();
             ctx.fill();
         
             ctx.restore();
         }
-             
+        
+        
+         
         const ctx = this.ctx;
-        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     
         const growthFactor = Math.min(this.timer / (this.fruit?.growTime * 6), 1);
     
@@ -236,11 +267,12 @@ class Plot {
         // Generate leaf properties once, separately for left and right
         if (!this.leaves) {
             this.leaves = [];
-            const leafCount = 8; // Fixed maximum number of leaves
+            const leafCount = 12; // Fixed maximum number of leaves
             for (let i = 0; i < leafCount; i++) {
                 this.leaves.push({
-                    y: Math.random() * 0.2 + 0.1 + i/leafCount, // Position near the top of the stem (60-80%)
-                    size: Math.random() * 6 + 4, // Left leaf size
+                    y: Math.random() * 0.05 + i/leafCount,
+                    offset: 1.5 - Math.random() * 3,
+                    size: Math.random() * 10 + 8 - i/leafCount, // Left leaf size
                     leftAngle: Math.random() * 0.6, // Slight upward angle for left leaves
                     rightAngle: Math.random() * -0.6, // Slight upward angle for right leaves
                     growthStart: 0 // Track when growth starts
@@ -258,67 +290,100 @@ class Plot {
                 if (leaf.growthStart === 0) {
                     leaf.growthStart = growthFactor; // Record when leaf starts growing
                 }
-                const leafGrowth = Math.max(0, Math.min(1, (growthFactor - leaf.growthStart) * 2)); // Grow leaves gradually
+                const leafGrowth = Math.max(0, Math.min(1, (growthFactor - leaf.growthStart))); // Grow leaves gradually
 
-                drawLeaf(ctx, centerX, leafY, leaf.leftAngle, -leaf.size, leafGrowth);
-                drawLeaf(ctx, centerX, leafY, leaf.rightAngle, leaf.size, leafGrowth);
-                
+                drawLeaf(ctx, centerX, leafY, leaf.leftAngle, Math.abs(leaf.size), leafGrowth, 'left');
+                drawLeaf(ctx, centerX, leafY + leaf.offset, leaf.rightAngle, Math.abs(leaf.size), leafGrowth, 'right');
+                                
             }
         });
                     
-        // Draw fruit based on state
-        if (this.state === 'fruit' || this.state === 'overripe') {
-            let radius = 6;
-            let color = this.fruit.color;
-            if (this.state === 'overripe') {
-                radius = 4; // Fixed size for each fruit
-                color = 'black';
-            }
 
-            // Draw each fruit at its pre-generated position
+            // Draw fruit based on state
+            if (this.state === 'fruit' || this.state === 'overripe') {
+                let radius = 6;
 
-            if (!this.fruitPositions) {
-                // Generate positions once
-                this.fruitPositions = [];
-                const x_jitter = 5; // Maximum random offset for bunching
-                const y_jitter = 15; // Maximum random offset for bunching
-                for (let i = 0; i < 10; i++) {
-                    this.fruitPositions.push({
-                        offsetX: (Math.random() - 0.5) * x_jitter * 2,
-                        offsetY: (Math.random() - 0.5) * y_jitter * 2
-                    });
+                // Generate positions if not already created
+                if (!this.fruitPositions) {
+                    this.fruitPositions = [];
+                    let x_jitter = 2; // Maximum random offset for bunching
+                    let y_jitter = 15; // Maximum random offset for bunching
+
+                    if (this.fruit.groundGrower) {
+                        x_jitter = 30; // Increase jitter for ground-growing plants
+                        y_jitter = 0; // Reduce jitter for ground-growing plants
+                    }
+                    for (let i = 0; i < 10; i++) {
+                        this.fruitPositions.push({
+                            offsetX: (Math.random() - 0.5) * x_jitter * 2,
+                            offsetY: (Math.random() - 0.5) * y_jitter * 2
+                        });
+                    }
                 }
-            }
 
-            this.fruitPositions.forEach((position, i) => {
-                if (i > this.fruitCount - 1) {
-                    return;
+                let src = `assets/${this.fruit.name.toLowerCase()}`;
+                if (this.state === 'overripe') {
+                    src += '_dead';
                 }
-                const x = centerX + position.offsetX; // Apply pre-generated X offset
-                const y = baseY - stemHeight + 20 + position.offsetY; // Apply pre-generated Y offset
+                src += '.svg';
+                this.fruitImage.src = src
 
-                // Draw fruit border (near black)
-                ctx.fillStyle = '#111'; // Near black border
-                ctx.beginPath();
-                ctx.arc(x, y, radius + 1, 0, Math.PI * 2); // Slightly larger radius for the border
-                ctx.fill();
+                // Draw each fruit
+                this.fruitPositions.forEach((position, i) => {
+                    if (i > this.fruitCount - 1) {
+                        return;
+                    }
 
-                // Draw fruit body
-                ctx.fillStyle = color; // Main fruit color
-                ctx.beginPath();
-                ctx.arc(x, y, radius, 0, Math.PI * 2);
-                ctx.fill();
-            });
+                    const x = centerX + position.offsetX;
+                    let y = baseY - stemHeight + 20 + position.offsetY;
+                    if (this.fruit.groundGrower) {
+                        y = baseY - 10;
+                    }
+
+                    // Draw the fruit image
+                    if (this.fruitImage.complete) { // Ensure the SVG is fully loaded
+                        ctx.drawImage(
+                            this.fruitImage,
+                            x - radius * 3, // Adjust X position to center the image
+                            y - radius * 2, // Adjust Y position to center the image
+                            radius * 6, // Width
+                            radius * 6 // Height
+                        );
+                    } 
+                });
+
+
         }
 
 
     }
     
-    
-
     updateAppearance() {
+        const ctx = this.ctx;
+
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        ctx.fillStyle = soilTypes[this.potType].color;
+
+        // Start the path for the hill
+        ctx.beginPath();
+        ctx.moveTo(0, 106); // Start at the bottom-left corner (80% of canvas height)
+        ctx.quadraticCurveTo(60, 72, 120, 106); // Peak at the middle, end at bottom-right corner
+        ctx.lineTo(120, 120); // Extend to the bottom-right of the canvas
+        ctx.lineTo(0, 120); // Draw across the bottom of the canvas
+        ctx.closePath(); // Close the shape
+        ctx.fill(); // Fill the hill with soil color
+        
+
         this.drawPlant();
-        this.canvas.style.backgroundColor = soilTypes[this.potType].color;
+
+            if (this.hasAutoFarm) {
+                // add an indicator to the corner of the pot
+                this.ctx.fillStyle = 'green';
+                this.ctx.beginPath();
+                this.ctx.arc(5, 5, 3, 0, Math.PI * 2);
+                this.ctx.fill();
+            } 
     }
 }
 
@@ -364,6 +429,13 @@ function initializeGrid() {
                             plot.updateAppearance();
                             money -= selectedTool.price;
                         }
+                    } else if (selectedTool.type === 'addon') {
+                        if (selectedTool.name === 'Farmer') {
+                            plot.hasAutoFarm = true;
+                            plot.updateAppearance();
+
+                            money -= selectedTool.price;
+                        }
                     }
                 }
                 updateState();
@@ -375,14 +447,15 @@ function initializeGrid() {
     }
 }
 
+
 // Toolbar - Shows Purchased Tools
 function initializeToolbar() {
     toolbarContainer.innerHTML = ''; // Clear toolbar
     toolbar.length = 0; // Reset toolbar array
 
-    function highlightSelected(index) {
+    function highlightSelected(selectedIndex) {
         toolbar.forEach((item, i) => {
-            item.style.border = i === index ? '2px solid blue' : '1px solid black';
+            item.style.border = i === selectedIndex ? '2px solid blue' : '1px solid black';
         });
     }
 
@@ -399,32 +472,54 @@ function initializeToolbar() {
 
             // Sort by price (ascending) within type
             return a.price - b.price;
-        }).filter(tool => tool.type != 'automation'); 
+        }).filter(tool => tool.type !== 'automation'); 
 
-    // Create toolbar elements
-    sortedTools.forEach((tool, index) => {
-        const toolElement = document.createElement('div');
-        toolElement.classList.add('toolbar-item');
+    // Group tools by type
+    const toolsByType = sortedTools.reduce((groups, tool) => {
+        if (!groups[tool.type]) {
+            groups[tool.type] = [];
+        }
+        groups[tool.type].push(tool);
+        return groups;
+    }, {});
 
-        // Add tooltip with the name
-        toolElement.title = tool.name;
-            
-        // Display icon and price if applicable
-        toolElement.innerHTML = tool.price > 0 
-    ? `<div style="font-size: 24px;">${tool.icon}</div>
-       <div style="font-size: 12px; margin-top: 2px;">$${tool.price.toFixed(2)}</div>`
-    : `<div style="font-size: 24px;">${tool.icon}</div>`;
+    // Create rows for each tool type
+    Object.keys(toolsByType).forEach(type => {
+        // Create a row for the current type
+        const rowElement = document.createElement('div');
+        rowElement.classList.add('toolbar-row');
+        rowElement.style.display = 'flex'; // Flex row for tools
+        rowElement.style.marginBottom = '10px'; // Space between rows
 
-        toolElement.style.backgroundColor = tool.backgroundColor
+        // Create elements for each tool in the type
+        toolsByType[type].forEach((tool, index) => {
+            const toolElement = document.createElement('div');
+            toolElement.classList.add('toolbar-item');
 
-        // Click handler for selecting tool
-        toolElement.addEventListener('click', () => {
+            // Add tooltip with the name
+            toolElement.title = tool.name;
+
+            // Display icon and price if applicable
+            toolElement.innerHTML = tool.price > 0
+                ? `<div style="font-size: 24px;">${tool.icon}</div>
+                   <div style="font-size: 12px; margin-top: 2px;">$${tool.price.toFixed(2)}</div>`
+                : `<div style="font-size: 24px;">${tool.icon}</div>`;
+
+            toolElement.style.backgroundColor = tool.backgroundColor;
+
+            // Click handler for selecting tool
+            toolElement.addEventListener('click', () => {
+                selectedTool = tool;
+                highlightSelected(toolbar.indexOf(toolElement));
+            });
+
             selectedTool = tool;
-            highlightSelected(index);
+            toolbar.push(toolElement);
+            rowElement.appendChild(toolElement);
         });
-        selectedTool = tool;
-        toolbar.push(toolElement);
-        toolbarContainer.appendChild(toolElement);
+
+        // Add the row to the toolbar container
+        toolbarContainer.appendChild(rowElement);
     });
 }
 
@@ -455,6 +550,22 @@ const nextTierCost = [0, 150, 500, 1500, 3500, 8500];
 function updateState() {
     const moneyDisplay = document.getElementById('money-display');
     moneyDisplay.textContent = `$${money.toFixed(2)}`;
+    updateStore()
+    if (money >= 10000) {
+        showPopup(`Well Yeee-haw! You got to $10,000 in ${formatElapsedTime()} seconds.`);
+    } else if (money < .25) {
+        // check if any plots have plants in them
+        let hasPlants = false
+        grid.forEach(row => row.forEach(plot => {
+            if (plot.state !== 'dirt') {
+                hasPlants = true
+            }
+        })
+        )
+        if (!hasPlants) {
+            showPopup(`Aww shucks, you ran out of money! Try again?`, 'Yes');
+        }
+    }
 
     // Update the Upgrade Tier button
     const upgradeButton = document.getElementById('upgrade-tier-button');
@@ -469,6 +580,7 @@ function updateState() {
         upgradeButton.innerHTML = `
             <div style="font-size: 14px;">Max Level Reached</div>
         `;
+        upgradeButton.classList.add('disabled');
     } else { 
         upgradeButton.innerHTML = `
         <div style="font-size: 14px;">$${nextTierCost[currentTier]}</div>
@@ -477,9 +589,54 @@ function updateState() {
     }
 }
 
-function initializeStore() {
-    const storePanel = document.getElementById('store-panel');
-    document.body.appendChild(storePanel);
+function showPopup(message, buttonText = 'OK') {
+    // Create the overlay
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    overlay.style.display = 'flex';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.zIndex = 1000;
+
+    // Create the popup
+    const popup = document.createElement('div');
+    popup.style.backgroundColor = '#fff';
+    popup.style.padding = '20px';
+    popup.style.borderRadius = '10px';
+    popup.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+    popup.style.textAlign = 'center';
+    popup.style.maxWidth = '500px';
+    popup.style.fontFamily = 'Arial, sans-serif';
+
+    // Add the message
+    const messageElement = document.createElement('p');
+    messageElement.textContent = message;
+    popup.appendChild(messageElement);
+
+    // Add a close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = buttonText;
+    closeButton.style.marginTop = '15px';
+    closeButton.style.padding = '10px 20px';
+    closeButton.style.border = 'none';
+    closeButton.style.backgroundColor = '#007bff';
+    closeButton.style.color = '#fff';
+    closeButton.style.borderRadius = '5px';
+    closeButton.style.cursor = 'pointer';
+
+    closeButton.addEventListener('click', () => {
+        document.body.removeChild(overlay);
+        location.reload();
+    });
+
+    popup.appendChild(closeButton);
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
 }
 
 
@@ -542,7 +699,7 @@ function updateStore() {
             const tierGrid = document.createElement('div');
             tierGrid.classList.add('tier-grid');
             tierGrid.style.display = 'grid';
-            tierGrid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+            tierGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
             tierGrid.style.gap = '10px'; // Space between items
 
             const tierTools = toolsByTier[tier];
@@ -567,7 +724,7 @@ function updateStore() {
                         purchasedTools.push(toolKey);
                         document.getElementById('money-display').textContent = `$${money.toFixed(2)}`;
                         initializeToolbar();
-                        updateStore();
+                        updateState();
                     }
                 };
                 item.title = tools[toolKey].tooltip;
@@ -590,18 +747,25 @@ function updateStore() {
         });
 }
 
+function formatElapsedTime() {
+    const minutes = Math.floor(elapsedTime / 60); // Calculate the number of minutes
+    const seconds = elapsedTime % 60; // Calculate the remaining seconds
+    return timer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`; // Format as MM:SS
+}
 
 // Start growth function
 function startGrowth() {
     growInterval = setInterval(() => {
         grid.forEach(row => row.forEach(plot => plot.grow()));
+        const timer = document.getElementById('timer');
+        elapsedTime = Math.floor((new Date() - startTime) / 1000);
+        timer.textContent = formatElapsedTime();        
     }, 50);
 }
 
-
 // Initialize
-initializeStore();
 initializeGrid();
 initializeToolbar();
 updateState();  
+updateStore()
 startGrowth(); // Start growth initially

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+
+<svg
+   width="800px"
+   height="800px"
+   viewBox="0 0 64 64"
+   aria-hidden="true"
+   role="img"
+   class="iconify iconify--emojione"
+   preserveAspectRatio="xMidYMid meet"
+   version="1.1"
+   id="svg5231"
+   sodipodi:docname="eggplant_dead.svg"
+   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs5235" />
+  <sodipodi:namedview
+     id="namedview5233"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     showgrid="false"
+     inkscape:zoom="1.09125"
+     inkscape:cx="400"
+     inkscape:cy="399.54181"
+     inkscape:window-width="3682"
+     inkscape:window-height="2126"
+     inkscape:window-x="3987"
+     inkscape:window-y="-11"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg5231" />
+  <path
+     d="M 44.405347,47.187909 C 44.307515,39.022732 38.51516,33.295196 37.295845,22.716889 36.551685,16.342018 24.718858,18.283177 23.736506,23.002112 22.473191,29.272195 20.938507,41.98856 22.676532,49.518658 26.453065,65.620416 44.620647,63.711787 44.405347,47.187909"
+     fill="#7a2d77"
+     id="path5217"
+     style="stroke-width:0.686486" />
+  <path
+     d="m 24.198008,25.150731 c 2.290355,-0.467331 3.83046,-3.049055 3.83046,-3.049055 0,0 0.03724,1.807206 1.363066,2.87412 L 31.399121,22.6814 c 0,0 2.058477,1.567626 5.407578,0.974798 l -5.766851,-4.996119 -4.834141,1.797069 -2.007699,4.693583"
+     opacity="0.15"
+     fill="#000000"
+     id="path5219"
+     style="stroke-width:0.686486" />
+  <g
+     fill="#83b730"
+     id="g5227"
+     transform="matrix(0.53033186,0.42676582,-0.43216365,0.54085244,30.952055,5.7932908)">
+    <path
+       d="M 10.9,12.5 10,14.1 C 7.6,12.5 4.2,8.1 7.6,2 l 1.5,1 c -3.1,5.5 1.3,9.1 1.8,9.5"
+       id="path5221" />
+    <path
+       d="m 17.2,16.2 c 3.8,0.4 7.3,-2.6 7.3,-2.6 0,0 -2.6,-3.6 -6.5,-4 -3.8,-0.4 -7.1,0.7 -7.3,2.5 -0.2,1.9 2.7,3.7 6.5,4.1"
+       id="path5223" />
+    <path
+       d="m 5.1,20.2 c -0.5,4 2,7.5 2,7.5 0,0 3.2,-2.9 3.7,-6.9 0.5,-4 -0.4,-7.3 -2,-7.5 -1.6,-0.1 -3.2,3 -3.7,6.9"
+       id="path5225" />
+  </g>
+  <path
+     d="m 27.786997,19.241498 c -0.186743,2.959898 2.677047,5.264433 2.677047,5.264433 0,0 3.099732,-2.57074 3.329692,-5.584723 0.186743,-2.959898 -1.030989,-5.361619 -2.677049,-5.264435 -1.699092,0.05452 -3.152764,2.528065 -3.32969,5.584725"
+     fill="#8cc63e"
+     id="path5229"
+     style="stroke-width:0.686486" />
+</svg>
