@@ -218,6 +218,10 @@
         <div id="header">
             <div id="money-display" class="gauge">$5</div>
             <div id="timer" class="gauge">0s</div>
+            <label>
+                <input type="checkbox" id="sound-toggle" checked>
+                Ambience
+            </label>
         </div>
         <div class="container">
 
@@ -227,6 +231,7 @@
                 <p>Tools</p>
                 <div id="toolbar-container"></div>
                 <button id="store-button" onclick="toggleStore()">Store</button>
+
             </div>
             <div class="box">
                 <!-- Store Panel -->
@@ -235,6 +240,7 @@
                     <div id="store-grid"></div>
                     <button id="upgrade-tier-button" onclick="upgradeTier()">Upgrade Tier</button>
                     <button id="close-store-button" onclick="toggleStore()">Close</button>
+
                 </div>
             </div>
      </div>

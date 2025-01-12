@@ -9,7 +9,7 @@ const startTime = new Date();
 let purchasedTools = ['cursor', 'normalSoil', 'tomatoSeed']; // Start with Tomato Seeds only
 
 let elapsedTime = 0;
-let money = 25;
+let money = 5;
 
 
 const gameContainer = document.getElementById('game-container');
@@ -86,6 +86,12 @@ const soilTypes = {
     advanced: new SoilType('Advanced', 'saddlebrown', 2),
     super: new SoilType('Super', 'brown', 3),
     mega: new SoilType('Mega', 'black', 5)
+};
+
+const sounds = {
+    click: new Audio('assets/digging.mp3'),
+    plop: new Audio('assets/plop.mp3'),
+    cutting: new Audio('assets/cutting.mp3'),
 };
 
 function showAlert(message) {
@@ -405,6 +411,8 @@ function initializeGrid() {
                             const rect = plot.canvas.getBoundingClientRect();
                             showFloatingText(`+$${earnings.toFixed(0)}`, rect.left + rect.width / 2, rect.top);
                     }
+                    sounds.cutting.currentTime = 0;
+                    sounds.cutting.play();
                     plot.reset(selectedTool);
                 } 
                 else if (selectedTool && money >= selectedTool.price) {
@@ -412,11 +420,15 @@ function initializeGrid() {
                         plot.potType = selectedTool.name.toLowerCase().split(' ')[0];
                         plot.updateAppearance();
                         money -= selectedTool.price;
+                        sounds.click.currentTime = 0;
+                        sounds.click.play();
                     } else if (selectedTool.type === 'seed' && plot.state === 'dirt') {
                         if (plot.potType === 'empty') {
                             showAlert('You need to add soil first!');
                             return;
                         }
+                        sounds.plop.currentTime = 0.1;
+                        sounds.plop.play();
                         plot.state = 'seed';
                         plot.fruit = fruits[selectedTool.name.toLowerCase().split(' ')[0]];
                         plot.updateAppearance();
@@ -766,6 +778,29 @@ function startGrowth() {
 // Initialize
 initializeGrid();
 initializeToolbar();
+
+const backgroundMusic = new Audio('assets/background.mp3');
+
 updateState();  
 updateStore()
 startGrowth(); // Start growth initially
+
+document.addEventListener('click', () => {
+    backgroundMusic.play();
+    backgroundMusic.loop = true; // Enable looping
+
+}, { once: true }); // Ensure it only listens for the first click
+
+// Initialize sound toggle
+const soundToggle = document.getElementById('sound-toggle');
+let isSoundEnabled = true; // Default to sound on
+
+// Update state when checkbox is toggled
+soundToggle.addEventListener('change', () => {
+    isSoundEnabled = soundToggle.checked; // Update sound state
+    if (isSoundEnabled) {
+        backgroundMusic.play();
+    } else {
+        backgroundMusic.pause();
+    }
+});
