@@ -1,20 +1,30 @@
 let gridSize = 4;
-const grid = [];
+let grid = [];
 const toolbar = [];
 let selectedTool = 1; 
 let selectedSoil = null; 
 let currentTier = 1;
 let hasWon = false;
-const startTime = new Date();
+let startTime = new Date();
 
-let purchasedTools = ['cursor', 'normalSoil', 'tomatoSeed']; // Start with Tomato Seeds only
+let purchasedTools = ['normal', 'normalSoil', 'tomatoSeed']; // Start with Tomato Seeds only
 
 let elapsedTime = 0;
-let money = 5;
+let money = 5000;
+
+let cursorMultiplier = 1
 
 
 const gameContainer = document.getElementById('game-container');
 const toolbarContainer = document.getElementById('toolbar-container');
+
+const cursorMultipliers = {
+    normal: 1,
+    advanced: 1.2,
+    crazy: 1.5,
+    ultimate: 2,
+};
+
 
 class Fruit {
     constructor(name, growTime, price, color, groundGrower = false) {
@@ -38,6 +48,8 @@ class Tool {
         this.tooltip = tooltip;
         if (!this.tooltip && type === 'seed') {
             this.tooltip = `Cost $${price.toFixed(2)}, sells for $${fruits[name.toLowerCase().split(' ')[0]].price.toFixed(2)}.  Matures in ${fruits[name.toLowerCase().split(' ')[0]].growTime} seconds`;
+        } else if (!this.tooltip && type === 'cursor') {
+            this.tooltip = `Multiplies your earnings by ${cursorMultipliers[name.toLowerCase().split(' ')[0]]}`;
         }
     }
 }
@@ -60,7 +72,11 @@ const fruits = {
 };
 
 const tools = {
-    cursor: new Tool('Cursor', '👆', 0, 'cursor', 1, 0),
+    normal: new Tool('Normal Cursor', '👆', 0, 'cursor', 1, 0),
+    advanced: new Tool('Advanced Cursor', '^', 0, 'cursor', 2, 100),
+    crazy: new Tool('Crazy Cursor', 'C', 0, 'cursor', 3, 400),
+    ultimate: new Tool('Ultimate Cursor', 'U', 0, 'cursor', 5, 1000),
+
     tomatoSeed: new Tool('Tomato Seed', '🍅', 0.25, 'seed', 1, 0),
     cucumberSeed: new Tool('Cucumber Seed', '🥒', 0.40, 'seed', 1, 30),
     onionSeed: new Tool('Onion Seed', '🧅', 1, 'seed', 2, 70),
@@ -68,18 +84,19 @@ const tools = {
     strawberrySeed: new Tool('Strawberry Seed', '🍓', 8, 'seed', 4, 600),
     eggplantSeed: new Tool('Eggplant Seed', '🍆', 30, 'seed', 5, 2000),
 
-    normalSoil: new Tool('Normal Pot', '🟫', 1, 'soil', 1, 20, 'sandybrown', tooltip='A pot lol'),
-    advancedSoil: new Tool('Advanced Pot', 'A', 3, 'soil', 2, 100, 'saddlebrown', tooltip='Better pot will yield 2x as much per plant'),
-    superSoil: new Tool('Super Pot', 'S', 5, 'soil', 4, 400, 'brown',  tooltip='Better pot will yield 3x as much per plant'),
-    megaSoil: new Tool('Mega Pot', 'M', 10, 'soil', 5, 800, 'darkgrey', tooltip='Better pot will yield 5x as much per plant'),
+    normalSoil: new Tool('Normal Soil', '🟫', 1, 'soil', 1, 20, 'sandybrown', tooltip='A pot lol'),
+    advancedSoil: new Tool('Advanced Soil', 'A', 3, 'soil', 2, 100, 'saddlebrown', tooltip='Better pot will yield 2x as much per plant'),
+    superSoil: new Tool('Super Soil', 'S', 5, 'soil', 4, 400, 'brown',  tooltip='Better pot will yield 3x as much per plant'),
+    megaSoil: new Tool('Mega Soil', 'M', 10, 'soil', 5, 800, 'darkgrey', tooltip='Better pot will yield 5x as much per plant'),
 
     autoFarmer: new Tool('Farmer', '👨‍🌾', 50, 'addon', 3, 400, '', tooltip='Add to a pot to automatically harvest them'),
 
     autoWater: new Tool('Irrigation', '💦', 0, 'automation', 2, 200, '', tooltip='Adds water to your crops, making them grow 20% faster'),
     autoFertilize: new Tool('Auto Fertilizer', '💩', 0, 'automation', 3, 500, '', tooltip='Adds fertilizer to your crops, making them grow 50% faster'),
     autoSeeder: new Tool('Auto Planter', '🌱', 0, 'automation', 4, 200, '', tooltip='after you harvest a crop, it will be automatically replanted'),
-    autoHarvester: new Tool('Auto Harvester', '🚜', 0, 'automation', 5, 5000, '', tooltip='All crops will be harvested automatically once they are ready'),
+   // autoHarvester: new Tool('Auto Harvester', '🚜', 0, 'automation', 5, 5000, '', tooltip='All crops will be harvested automatically once they are ready'),
 };
+
 
 const soilTypes = {
     empty: new SoilType('Empty', 'white', 0),
@@ -95,40 +112,12 @@ const sounds = {
     cutting: new Audio('assets/cutting.mp3'),
 };
 
-function showAlert(message) {
-    const banner = document.getElementById('alert-banner');
-    banner.textContent = message; // Set the message
-    banner.style.display = 'block'; // Show the banner
-
-    // Hide banner after 3 seconds
-    setTimeout(() => {
-        banner.style.display = 'none';
-    }, 3000);
-}
-
-function showFloatingText(text, x, y) {
-    const floatingText = document.createElement('div');
-    floatingText.textContent = text;
-    floatingText.classList.add('floating-text');
-    document.body.appendChild(floatingText);
-
-    // Position the text near the click location
-    floatingText.style.left = `${x}px`;
-    floatingText.style.top = `${y}px`;
-
-    // Remove the text after animation
-    setTimeout(() => {
-        floatingText.remove();
-    }, 1000); // Matches the animation duration
-}
-
-
 class Plot {
-    constructor(potType = 'empty') {
+    constructor() {
         this.state = 'dirt'; // 'dirt', 'seed', 'sprout', 'grown', 'fruit', 'overripe'
         this.timer = 0;
         this.fruit = null;
-        this.potType = potType;
+        this.potType = 'empty';
         this.canvas = document.createElement('canvas');
         this.ctx = this.canvas.getContext('2d');
         this.canvas.width = 120;
@@ -171,7 +160,7 @@ class Plot {
                 money += earnings;
                 // Show the floating text near the clicked fruit
                     const rect = this.canvas.getBoundingClientRect();
-                    showFloatingText(`+$${earnings.toFixed(0)}`, rect.left + rect.width / 2, rect.top);
+                    showFloatingText(`+$${earnings.toFixed(2)}`, rect.left + rect.width / 2, rect.top);
                 this.reset()
                 updateState()
             }
@@ -251,8 +240,6 @@ class Plot {
             ctx.restore();
         }
         
-        
-         
         const ctx = this.ctx;
     
         const growthFactor = Math.min(this.timer / (this.fruit?.growTime * 6), 1);
@@ -260,7 +247,7 @@ class Plot {
         // Dimensions based on canvas size
         const centerX = this.canvas.width / 2;
         const baseY = this.canvas.height * 0.9;
-        const maxStemHeight = this.canvas.height - 25;
+        const maxStemHeight = this.canvas.height - 35;
         const stemHeight = Math.min(this.canvas.height * 0.8 * growthFactor, maxStemHeight);
     
         // Draw stem based on growth factor
@@ -307,7 +294,7 @@ class Plot {
                     
 
             // Draw fruit based on state
-            if (this.state === 'fruit' || this.state === 'overripe') {
+            if (this.fruit && (this.state === 'fruit' || this.state === 'overripe')) {
                 let radius = 6;
 
                 // Generate positions if not already created
@@ -394,98 +381,204 @@ class Plot {
     }
 }
 
-function initializeGrid() {
-    for (let i = 0; i < gridSize; i++) {
-        grid[i] = [];
-        for (let j = 0; j < gridSize; j++) {
-            const potType = 'empty';
-            const plot = new Plot(potType);
+/// Save and Load
 
-            plot.updateAppearance();
+function saveGame() {
+    const saveData = {
+        grid: grid.filter(x => x).map(row =>
+            row.map(plot => ({
+                state: plot.state,
+                timer: plot.timer,
+                fruit: plot.fruit ? plot.fruit.name.toLowerCase() : null,
+                potType: plot.potType,
+                hasAutoFarm: plot.hasAutoFarm,
+            }))
+        ),
+        money,
+        startTime,
+        purchasedTools,
+        currentTier,
+        hasWon,
+    };
+    localStorage.setItem('farmGameSave', JSON.stringify(saveData));
+}
 
-            plot.canvas.addEventListener('click', () => {
-                if (plot.state === 'fruit' || plot.state === 'overripe') {
-                    if (plot.state === 'fruit') {
-                        earnings = plot.fruit.price * plot.fruitCount;
-                        money += earnings;
-                        // Show the floating text near the clicked fruit
-                            const rect = plot.canvas.getBoundingClientRect();
-                            showFloatingText(`+$${earnings.toFixed(0)}`, rect.left + rect.width / 2, rect.top);
-                    }
-                    sounds.cutting.currentTime = 0;
-                    sounds.cutting.play();
-                    plot.reset(selectedTool);
+function loadGame() {
+    const savedData = localStorage.getItem('farmGameSave');
+    if (savedData) {
+        const { grid: savedGrid, money: savedMoney, startTime: savedTime, purchasedTools: savedTools, currentTier: savedTier, hasWon: savedWon } = JSON.parse(savedData);
+
+        money = savedMoney;
+        startTime = new Date(savedTime);
+        purchasedTools = savedTools;
+        currentTier = savedTier;
+        hasWon = savedWon;
+
+        grid.length = 0; // Clear current grid
+ 
+        initializeGrid(savedGrid); // Re-render the grid
+        initializeToolbar(); // Re-initialize the toolbar
+        updateState(); // Update the state
+        updateStore(); // Update the store
+    } else {
+        initializeGrid();
+    }
+}
+
+
+/// Utils
+
+function showAlert(message) {
+    const banner = document.getElementById('alert-banner');
+    banner.textContent = message; // Set the message
+    banner.style.display = 'block'; // Show the banner
+
+    // Hide banner after 3 seconds
+    setTimeout(() => {
+        banner.style.display = 'none';
+    }, 3000);
+}
+
+function showFloatingText(text, x, y) {
+    const floatingText = document.createElement('div');
+    floatingText.textContent = text;
+    floatingText.classList.add('floating-text');
+    document.body.appendChild(floatingText);
+
+    // Position the text near the click location
+    floatingText.style.left = `${x}px`;
+    floatingText.style.top = `${y}px`;
+
+    // Remove the text after animation
+    setTimeout(() => {
+        floatingText.remove();
+    }, 1000); // Matches the animation duration
+}
+
+function initializeGrid(sourceGrid, append = false) {
+    if (!append) {
+        gameContainer.innerHTML = ''; 
+        grid = [];
+    }
+    for (let i = 0; i < currentTier; i++) {
+        if (!grid[i]) {
+            grid[i] = [];
+            for (let j = 0; j < gridSize; j++) {
+                let potType = 'empty';
+                let plot = new Plot();
+                // check if sourcegrid has the current elements
+                if (sourceGrid && sourceGrid[i] && sourceGrid[i][j]) {
+                    const plotData = sourceGrid[i][j];
+                    plot.fruit = plotData.fruit ? fruits[plotData.fruit] : null;
+                    plot.state = plotData.state;
+                    plot.timer = plotData.timer;
+                    plot.potType = plotData.potType;
+                    plot.hasAutoFarm = plotData.hasAutoFarm;
                 } 
-                else if (selectedTool && money >= selectedTool.price) {
-                    if (selectedTool.type === 'soil' && plot.potType === 'empty') {
-                        plot.potType = selectedTool.name.toLowerCase().split(' ')[0];
-                        plot.updateAppearance();
-                        money -= selectedTool.price;
-                        sounds.click.currentTime = 0;
-                        sounds.click.play();
-                    } else if (selectedTool.type === 'seed' && plot.state === 'dirt') {
-                        if (plot.potType === 'empty') {
-                            showAlert('You need to add soil first!');
-                            return;
-                        }
-                        sounds.plop.currentTime = 0.1;
-                        sounds.plop.play();
-                        plot.state = 'seed';
-                        plot.fruit = fruits[selectedTool.name.toLowerCase().split(' ')[0]];
-                        plot.updateAppearance();
-                        money -= selectedTool.price;
-                    } else if (selectedTool.type === 'soil'){
-                        const soilType = selectedTool.name.toLowerCase().split(' ')[0];
-                        if (plot.potType !== soilType) {
-                            plot.potType = selectedTool.name.toLowerCase().split(' ')[0];
-                    
-                            plot.updateAppearance();
-                            money -= selectedTool.price;
-                        }
-                    } else if (selectedTool.type === 'addon') {
-                        if (selectedTool.name === 'Farmer') {
-                            plot.hasAutoFarm = true;
-                            plot.updateAppearance();
+                plot.updateAppearance();
 
+                plot.canvas.addEventListener('click', () => {
+                    if (plot.state === 'fruit' || plot.state === 'overripe') {
+                        if (plot.state === 'fruit') {
+                            earnings = plot.fruit.price * plot.fruitCount * cursorMultiplier;
+                            money += earnings;
+                            // Show the floating text near the clicked fruit
+                                const rect = plot.canvas.getBoundingClientRect();
+                                showFloatingText(`+$${earnings.toFixed(2)}`, rect.left + rect.width / 2, rect.top);
+                        }
+                        sounds.cutting.currentTime = 0;
+                        sounds.cutting.play();
+                        plot.reset(selectedTool);
+                    } 
+                    else if (selectedTool && money >= selectedTool.price) {
+                        if (selectedTool.type === 'soil' && plot.potType === 'empty') {
+                            plot.potType = selectedTool.name.toLowerCase().split(' ')[0];
+                            plot.updateAppearance();
                             money -= selectedTool.price;
+                            sounds.click.currentTime = 0;
+                            sounds.click.play();
+                        } else if (selectedTool.type === 'seed' && plot.state === 'dirt') {
+                            if (plot.potType === 'empty') {
+                                showAlert('You need to add soil first!');
+                                return;
+                            }
+                            sounds.plop.currentTime = 0.1;
+                            sounds.plop.play();
+                            plot.state = 'seed';
+                            plot.fruit = fruits[selectedTool.name.toLowerCase().split(' ')[0]];
+                            plot.updateAppearance();
+                            money -= selectedTool.price;
+                        } else if (selectedTool.type === 'soil'){
+                            const soilType = selectedTool.name.toLowerCase().split(' ')[0];
+                            if (plot.potType !== soilType) {
+                                plot.potType = selectedTool.name.toLowerCase().split(' ')[0];
+                        
+                                plot.updateAppearance();
+                                money -= selectedTool.price;
+                            }
+                        } else if (selectedTool.type === 'addon') {
+                            if (selectedTool.name === 'Farmer') {
+                                plot.hasAutoFarm = true;
+                                plot.updateAppearance();
+
+                                money -= selectedTool.price;
+                            }
                         }
                     }
-                }
-                updateState();
-            });
+                    updateState();
+                });
 
-            grid[i][j] = plot;
-            gameContainer.appendChild(plot.canvas);
+                grid[i][j] = plot;
+                gameContainer.appendChild(plot.canvas);
+            }
         }
     }
 }
 
+
+
+// Sort tools: Cursor first, then by type and price
 
 // Toolbar - Shows Purchased Tools
 function initializeToolbar() {
     toolbarContainer.innerHTML = ''; // Clear toolbar
     toolbar.length = 0; // Reset toolbar array
 
+    const sortedTools = purchasedTools
+    .map(toolKey => tools[toolKey]) // Map tool keys to tool objects
+    .filter(tool => {
+        if (tool.type === 'cursor') {
+            // Keep only the most expensive cursor
+            const cursors = purchasedTools
+                .map(toolKey => tools[toolKey])
+                .filter(t => t.type === 'cursor');
+            const mostExpensiveCursor = cursors.reduce((max, current) => 
+                current.unlockPrice > max.unlockPrice ? current : max, cursors[0]);
+            cursorMultiplier = cursorMultipliers[mostExpensiveCursor.name.toLowerCase().split(' ')[0]]
+            return tool === mostExpensiveCursor;
+
+        }
+        return true; // Keep all other tools
+    })
+    .sort((a, b) => {
+        // Cursor type always first
+        if (a.type === 'cursor' && b.type !== 'cursor') return -1;
+        if (b.type === 'cursor' && a.type !== 'cursor') return 1;
+
+        // Sort by type alphabetically
+        if (a.type !== b.type) return a.type.localeCompare(b.type);
+
+        // Sort by price (ascending) within type
+        return a.price - b.price;
+    })
+    .filter(tool => tool.type !== 'automation'); // Exclude automation tools
+
+
     function highlightSelected(selectedIndex) {
         toolbar.forEach((item, i) => {
             item.style.border = i === selectedIndex ? '2px solid blue' : '1px solid black';
         });
     }
-
-    // Sort tools: Cursor first, then by type and price
-    const sortedTools = purchasedTools
-        .map(toolKey => tools[toolKey]) // Map tool keys to tool objects
-        .sort((a, b) => {
-            // Cursor type always first
-            if (a.type === 'cursor' && b.type !== 'cursor') return -1;
-            if (b.type === 'cursor' && a.type !== 'cursor') return 1;
-
-            // Sort by type alphabetically
-            if (a.type !== b.type) return a.type.localeCompare(b.type);
-
-            // Sort by price (ascending) within type
-            return a.price - b.price;
-        }).filter(tool => tool.type !== 'automation'); 
 
     // Group tools by type
     const toolsByType = sortedTools.reduce((groups, tool) => {
@@ -564,6 +657,7 @@ function updateState() {
     const moneyDisplay = document.getElementById('money-display');
     moneyDisplay.textContent = `$${money.toFixed(2)}`;
     updateStore()
+    saveGame();
     if (money >= 10000) {
         const finalTime = formatElapsedTime();
         if (!hasWon) {
@@ -668,6 +762,9 @@ function upgradeTier() {
         // Deduct money and upgrade the tier
         money -= unlockPrice;
         currentTier++;
+        sourceGrid = grid
+        initializeGrid(sourceGrid, true);
+
         unlockPrice = nextTierCost[currentTier];
         updateState()
         updateStore()
@@ -786,10 +883,10 @@ function startGrowth() {
 }
 
 // Initialize
-initializeGrid();
 initializeToolbar();
 
 const backgroundMusic = new Audio('assets/background.mp3');
+loadGame();
 
 updateState();  
 updateStore()
@@ -803,7 +900,7 @@ document.addEventListener('click', () => {
 
 // Initialize sound toggle
 const soundToggle = document.getElementById('sound-toggle');
-let isSoundEnabled = true; // Default to sound on
+let isSoundEnabled = false; // Default to sound on
 
 // Update state when checkbox is toggled
 soundToggle.addEventListener('change', () => {
@@ -813,4 +910,9 @@ soundToggle.addEventListener('change', () => {
     } else {
         backgroundMusic.pause();
     }
+});
+
+document.getElementById('reset-game').addEventListener('click', () => {
+    localStorage.removeItem('farmGameSave');
+    location.reload(); // Restart the game
 });
