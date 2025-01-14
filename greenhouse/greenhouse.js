@@ -818,7 +818,7 @@ function updateStore() {
             const tierGrid = document.createElement('div');
             tierGrid.classList.add('tier-grid');
             tierGrid.style.display = 'grid';
-            tierGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            tierGrid.style.gridTemplateColumns = 'repeat(4, 1fr)';
             tierGrid.style.gap = '10px'; // Space between items
 
             const tierTools = toolsByTier[tier];
