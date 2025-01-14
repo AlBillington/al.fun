@@ -700,7 +700,7 @@ function updateState() {
     }
 }
 
-function showPopup(message, buttonText = 'OK', reloadPage = false) {
+function showPopup(message, buttonText = 'OK', restartOnClose = false) {
     // Create the overlay
     const overlay = document.createElement('div');
     overlay.style.position = 'fixed';
@@ -739,9 +739,10 @@ function showPopup(message, buttonText = 'OK', reloadPage = false) {
     closeButton.style.color = '#fff';
     closeButton.style.borderRadius = '5px';
     closeButton.style.cursor = 'pointer';
-    if (reloadPage) {
+    if (restartOnClose) {
         closeButton.addEventListener('click', () => {
             document.body.removeChild(overlay);
+            localStorage.removeItem('farmGameSave');
             location.reload();
         });
     } else {
