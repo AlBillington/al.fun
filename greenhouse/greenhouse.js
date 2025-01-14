@@ -10,7 +10,7 @@ let startTime = new Date();
 let purchasedTools = ['normal', 'normalSoil', 'tomatoSeed']; // Start with Tomato Seeds only
 
 let elapsedTime = 0;
-let money = 5000;
+let money = 5;
 
 let cursorMultiplier = 1
 
