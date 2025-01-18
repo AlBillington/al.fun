@@ -10,7 +10,7 @@ let startTime = new Date();
 let purchasedTools = ['normal', 'normalSoil', 'tomatoSeed']; // Start with Tomato Seeds only
 
 let elapsedTime = 0;
-let money = 5;
+let money = 9000;
 
 let cursorMultiplier = 1
 
@@ -27,12 +27,14 @@ const cursorMultipliers = {
 
 
 class Fruit {
-    constructor(name, growTime, price, color, groundGrower = false) {
+    constructor(name, growTime, price, color, leafColor, groundGrower = false) {
         this.name = name;
         this.growTime = growTime;
         this.price = price;
         this.color = color;
+        this.leafColor = leafColor;
         this.groundGrower = groundGrower;
+
     }
 }
 
@@ -63,12 +65,12 @@ class SoilType {
 }
 
 const fruits = {
-    tomato: new Fruit('Tomato', 10, 1, '#ad0000'),
-    cucumber: new Fruit('Cucumber', 18, 2, '#7bd18a'),
-    onion: new Fruit('Onion', 30, 5, '#dee1a8', groundGrower = true),
-    pumpkin: new Fruit('Pumpkin', 40, 10, '#d77c14', groundGrower = true),
-    strawberry: new Fruit('Strawberry', 8, 8, '#bcd981'),
-    eggplant: new Fruit('Eggplant', 30, 50, '#7c59d4')
+    tomato: new Fruit('Tomato', 10, 1, '#ad0000', leafColor = '#4cb315'),
+    cucumber: new Fruit('Cucumber', 18, 2, '#7bd18a', leafColor ='#2f6811'),
+    onion: new Fruit('Onion', 30, 5, '#dee1a8',leafColor ='#62a040', groundGrower = true),
+    pumpkin: new Fruit('Pumpkin', 40, 10, '#d77c14', leafColor ='#53d53c', groundGrower = true,),
+    strawberry: new Fruit('Strawberry', 8, 8, '#bcd981', leafColor ='#68ac43'),
+    eggplant: new Fruit('Eggplant', 30, 50, '#7c59d4', leafColor ='#3c791c'),
 };
 
 const tools = {
@@ -88,8 +90,7 @@ const tools = {
     advancedSoil: new Tool('Advanced Soil', 'A', 3, 'soil', 2, 100, 'saddlebrown', tooltip='Better pot will yield 2x as much per plant'),
     superSoil: new Tool('Super Soil', 'S', 5, 'soil', 4, 400, 'brown',  tooltip='Better pot will yield 3x as much per plant'),
     megaSoil: new Tool('Mega Soil', 'M', 10, 'soil', 5, 800, 'darkgrey', tooltip='Better pot will yield 5x as much per plant'),
-
-    autoFarmer: new Tool('Farmer', '👨‍🌾', 50, 'addon', 3, 400, '', tooltip='Add to a pot to automatically harvest them'),
+    autoFarmer: new Tool('Farmer', '👨‍🌾', 250, 'addon', 3, 400, '', tooltip='Add to a pot to automatically harvest them'),
 
     autoWater: new Tool('Irrigation', '💦', 0, 'automation', 2, 200, '', tooltip='Adds water to your crops, making them grow 20% faster'),
     autoFertilize: new Tool('Auto Fertilizer', '💩', 0, 'automation', 3, 500, '', tooltip='Adds fertilizer to your crops, making them grow 50% faster'),
@@ -123,7 +124,7 @@ class Plot {
         this.canvas.width = 120;
         this.canvas.height = 120;
         this.canvas.style.backgroundColor = soilTypes[this.potType].color;
-        this.canvas.style.border = '1px solid black';
+        this.canvas.style.border = '1px solid lightgrey';
         this.hasAutoFarm = false
         this.fruitImage = new Image()
     }
@@ -141,7 +142,7 @@ class Plot {
             this.timer += increment;
             const growthDuration = this.timer / this.fruit.growTime
             const growthStage = Math.floor(growthDuration);
-            if (growthStage >= 9 * increment) {
+            if (growthStage >= 9) {
                 this.state = 'overripe';
             } else if (growthStage >= 4 ) {
                 const multiplier = soilTypes[this.potType].multiplier;
@@ -191,7 +192,8 @@ class Plot {
 
     drawPlant() {
 
-        function drawLeaf(ctx, centerX, leafY, angle, size, growth, side, borderColor = '#111', fillColor = 'green') {
+        function drawLeaf(ctx, centerX, leafY, angle, size, growth, side, fillColor = 'green') {
+            const borderColor = '#111'
             ctx.save();
             ctx.translate(centerX, leafY);
             ctx.rotate(angle);
@@ -244,6 +246,8 @@ class Plot {
     
         const growthFactor = Math.min(this.timer / (this.fruit?.growTime * 6), 1);
     
+        const plantColor = this.fruit?.leafColor ?? '#03ae45'
+
         // Dimensions based on canvas size
         const centerX = this.canvas.width / 2;
         const baseY = this.canvas.height * 0.9;
@@ -251,7 +255,7 @@ class Plot {
         const stemHeight = Math.min(this.canvas.height * 0.8 * growthFactor, maxStemHeight);
     
         // Draw stem based on growth factor
-        ctx.strokeStyle = 'green';
+        ctx.strokeStyle = plantColor;
         ctx.lineWidth = Math.max(1, growthFactor * 4);
         ctx.beginPath();
         ctx.moveTo(centerX, baseY);
@@ -286,8 +290,8 @@ class Plot {
                 }
                 const leafGrowth = Math.max(0, Math.min(1, (growthFactor - leaf.growthStart))); // Grow leaves gradually
 
-                drawLeaf(ctx, centerX, leafY, leaf.leftAngle, Math.abs(leaf.size), leafGrowth, 'left');
-                drawLeaf(ctx, centerX, leafY + leaf.offset, leaf.rightAngle, Math.abs(leaf.size), leafGrowth, 'right');
+                drawLeaf(ctx, centerX, leafY, leaf.leftAngle, Math.abs(leaf.size), leafGrowth, 'left', plantColor);
+                drawLeaf(ctx, centerX, leafY + leaf.offset, leaf.rightAngle, Math.abs(leaf.size), leafGrowth, 'right', plantColor);
                                 
             }
         });
@@ -362,7 +366,7 @@ class Plot {
         // Start the path for the hill
         ctx.beginPath();
         ctx.moveTo(0, 106); // Start at the bottom-left corner (80% of canvas height)
-        ctx.quadraticCurveTo(60, 72, 120, 106); // Peak at the middle, end at bottom-right corner
+        ctx.quadraticCurveTo(60, 92, 120, 106); // Peak at the middle, end at bottom-right corner
         ctx.lineTo(120, 120); // Extend to the bottom-right of the canvas
         ctx.lineTo(0, 120); // Draw across the bottom of the canvas
         ctx.closePath(); // Close the shape
@@ -524,6 +528,9 @@ function initializeGrid(sourceGrid, append = false) {
                                 money -= selectedTool.price;
                             }
                         }
+                    } 
+                    if (plot.state === 'seed' || plot.state === 'sprout' || plot.state === 'grown') {
+                        plot.timer += 1
                     }
                     updateState();
                 });
