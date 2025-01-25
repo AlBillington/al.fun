@@ -4,7 +4,6 @@ import { updateHeader } from './utils/helpers.js';
 import { updateInventoryPane } from './ui/inventory.js';
 import { startOrderGeneration, checkAllOrders} from './ui/orders.js';
 import { updateReputationBar } from './ui/reputationBar.js';
-import { gameState } from './state.js';
 
 // Update all print bays periodically
 function startPrintBayUpdates() {

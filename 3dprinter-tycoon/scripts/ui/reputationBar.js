@@ -86,7 +86,7 @@ const upgrades = [
         }
     },
     { 
-        name: 'Marketing', 
+        name: 'Better Marketing', 
         description: 'Increases order volume by 25%',
         applyUpgrade: function() {
             gameState.orderSpeed *= 1.25;
@@ -94,7 +94,7 @@ const upgrades = [
         }
     },
     { 
-        name: 'Customer Service', 
+        name: 'Better Support', 
         description: '25% More time to complete orders',
         applyUpgrade: function() {
             gameState.orderTime *= 1.25;
@@ -104,7 +104,7 @@ const upgrades = [
 ];
 
 
-function unlockFeature(level) {
+export function unlockFeature(level) {
     stopOrderGeneration(); // Stop generating new orders while the modal is open
 
     // Create the modal overlay
@@ -131,7 +131,7 @@ function unlockFeature(level) {
 
     // Add a title to the modal
     const title = document.createElement('h3');
-    title.textContent = `Choose an Upgrade for Level ${level}`;
+    title.textContent = `You leveled up! Choose an investment`;
     modalContainer.appendChild(title);
 
     // Create a container for upgrades
@@ -147,6 +147,11 @@ function unlockFeature(level) {
 
         const button = document.createElement('button');
         button.textContent = upgrade.name;
+        button.style.width = '100%';
+        button.style.height = '50px';
+        button.style.padding = '10px';
+        button.style.marginBottom = '20px';
+
         button.onclick = () => {
             applyUpgrade(upgrade);
             document.body.removeChild(modalOverlay);
@@ -155,6 +160,7 @@ function unlockFeature(level) {
 
         const description = document.createElement('p');
         description.textContent = upgrade.description;
+        description.style.fontSize = '0.8em';
         upgradeElement.appendChild(description);
 
         upgradesContainer.appendChild(upgradeElement); // Add the upgrade element to the container
