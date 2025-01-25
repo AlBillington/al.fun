@@ -181,7 +181,7 @@ function startOrderGeneration() {
         const newOrder = generateOrder();
         createOrder(newOrder);
 
-        const nextInterval = Math.random() * ((orderIntervalRange[1] - orderIntervalRange[0]) + orderIntervalRange[0]) / gameState.orderSpeed;
+        const nextInterval = (Math.random() * (orderIntervalRange[1] - orderIntervalRange[0]) + orderIntervalRange[0]) / gameState.orderSpeed;
         const timerId = setTimeout(generateAndDisplayOrder, nextInterval);
         orderTimers.push(timerId); // Store the timer ID for possible cancellation
     }
