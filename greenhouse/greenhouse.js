@@ -69,8 +69,8 @@ const fruits = {
     cucumber: new Fruit('Cucumber', 18, 2, '#7bd18a', leafColor ='#2f6811'),
     onion: new Fruit('Onion', 30, 5, '#dee1a8',leafColor ='#62a040', groundGrower = true),
     pumpkin: new Fruit('Pumpkin', 40, 10, '#d77c14', leafColor ='#53d53c', groundGrower = true,),
-    strawberry: new Fruit('Strawberry', 8, 8, '#bcd981', leafColor ='#68ac43'),
-    eggplant: new Fruit('Eggplant', 30, 50, '#7c59d4', leafColor ='#3c791c'),
+    strawberry: new Fruit('Strawberry', 8, 5, '#bcd981', leafColor ='#68ac43'),
+    eggplant: new Fruit('Eggplant', 30, 25, '#7c59d4', leafColor ='#3c791c'),
 };
 
 const tools = {
@@ -92,8 +92,9 @@ const tools = {
     megaSoil: new Tool('Mega Soil', 'M', 10, 'soil', 5, 800, 'darkgrey', tooltip='Better pot will yield 5x as much per plant'),
     autoFarmer: new Tool('Farmer', '👨‍🌾', 250, 'addon', 3, 400, '', tooltip='Add to a pot to automatically harvest them'),
 
-    autoWater: new Tool('Irrigation', '💦', 0, 'automation', 2, 200, '', tooltip='Adds water to your crops, making them grow 20% faster'),
-    autoFertilize: new Tool('Auto Fertilizer', '💩', 0, 'automation', 3, 500, '', tooltip='Adds fertilizer to your crops, making them grow 50% faster'),
+    // autoWater: new Tool('Irrigation', '💦', 0, 'automation', 2, 200, '', tooltip='Adds water to your crops, making them grow 10% faster'),
+    autoFertilize: new Tool('Auto Fertilizer', '💩', 0, 'automation', 3, 500, '', tooltip='Adds fertilizer to your crops, making them grow 20% faster'),
+    autoWater: new Tool('Irrigation', '💦', 0, 'automation', 5, 1000, '', tooltip='Adds water to your crops, making them grow 40% faster'),
     autoSeeder: new Tool('Auto Planter', '🌱', 0, 'automation', 4, 200, '', tooltip='after you harvest a crop, it will be automatically replanted'),
    // autoHarvester: new Tool('Auto Harvester', '🚜', 0, 'automation', 5, 5000, '', tooltip='All crops will be harvested automatically once they are ready'),
 };

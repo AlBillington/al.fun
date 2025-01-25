@@ -349,6 +349,5 @@ function initialize() {
 }
 
 loadImages(() => {
-    console.log('All images loaded successfully!');
     initialize(); // Start the game loop after images are ready
 });

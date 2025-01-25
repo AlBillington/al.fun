@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Printing Business Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header>
+            <h1>3D Printing Tycoon</h1>
+            <div id="money-display-container">
+                <strong>Money: </strong><span id="money-display">$500.00</span>
+            </div>
+        </header>
+        <div id="reputation-bar-container" style="margin-bottom: 20px;"></div>
+
+        <main>
+            <!-- Toolbar on the left -->
+            <aside id="toolbar-container" class="toolbar">
+                <h2>Tools</h2>
+                <!-- Dynamically populated toolbar items -->
+            </aside>
+
+            <!-- Game Grid in the center -->
+            <section id="game-container" class="game-grid">
+                <!-- Dynamically populated print bays -->
+            </section>
+
+            <!-- Inter-Management Pane on the right -->
+            <aside id="management-pane" class="management-pane">
+                <h2>Printer Management</h2>
+                <div id="management-content">
+                    <p>Select a printer to manage.</p>
+                </div>
+            </aside>
+            
+        </main>
+        <main>
+            <aside id="inventory-pane" style="width: 100%; background-color: #f8f9fa; border-top: 1px solid #ddd; padding: 10px;">
+                <h3>Inventory</h3>
+                <div id="inventory-list" style="display: flex; flex-wrap: wrap;"></div>
+            </aside>
+            <aside id="orders-container">
+            </div>
+        </main>
+
+        <!-- Footer -->
+    </div>
+
+    <script type="module" src="scripts/main.js"></script>
+</body>
+</html>
