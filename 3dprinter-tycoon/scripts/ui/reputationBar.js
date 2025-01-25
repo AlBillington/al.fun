@@ -80,8 +80,6 @@ const upgrades = [
         name: 'Upgrade Bench', 
         description: 'Unlock a new Printer slot',
         applyUpgrade: function() {
-            // Code to unlock a new printer slot
-            console.log("A new printer slot has been unlocked!");
             gameState.bays++;
             updatePrintBayGrid();
             // Modify game state or trigger effects related to the upgrade
@@ -89,20 +87,16 @@ const upgrades = [
     },
     { 
         name: 'Marketing', 
-        description: 'Increases order volume by 15%',
+        description: 'Increases order volume by 25%',
         applyUpgrade: function() {
-            // Code to increase order volume
-            console.log("Order volume has increased by 25%!");
             gameState.orderSpeed *= 1.25;
             // Modify game state or trigger effects related to the upgrade
         }
     },
     { 
         name: 'Customer Service', 
-        description: '15% More time to complete orders',
+        description: '25% More time to complete orders',
         applyUpgrade: function() {
-            // Code to increase the time limit for orders
-            console.log("Time to complete orders has increased by 25%!");
             gameState.orderTime *= 1.25;
             // Modify game state or trigger effects related to the upgrade
         }
